@@ -1,0 +1,4 @@
+server:
+  port: 9015
+  servlet:
+    context-path: /xml
