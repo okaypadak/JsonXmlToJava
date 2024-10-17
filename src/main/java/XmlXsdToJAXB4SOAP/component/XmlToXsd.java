@@ -1,6 +1,6 @@
-package XmlXsdToJAXB4SOAP.service;
+package XmlXsdToJAXB4SOAP.component;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Service
-public class XmlToXsdService {
+@Component
+public class XmlToXsd {
 
     private static HashMap<String, String> namespaceMap = new HashMap<>();
 

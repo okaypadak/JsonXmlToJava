@@ -1,14 +1,14 @@
-package XmlXsdToJAXB4SOAP.service;
+package XmlXsdToJAXB4SOAP.component;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-@Service
-public class ZipService {
+@Component
+public class Zip {
 
     public void zipDirectory(String sourceDirPath, String zipFilePath) throws IOException {
         Path zipFile = Files.createFile(Paths.get(zipFilePath));

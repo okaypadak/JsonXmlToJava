@@ -1,14 +1,14 @@
-package XmlXsdToJAXB4SOAP.service;
+package XmlXsdToJAXB4SOAP.component;
 
 import com.sun.tools.xjc.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.xml.sax.SAXParseException;
 import java.io.File;
 
-@Service
+@Component
 @Slf4j
-public class XSDToJavaService {
+public class XSDToJava {
 
     public void convert(File file, String outputDir) {
 
