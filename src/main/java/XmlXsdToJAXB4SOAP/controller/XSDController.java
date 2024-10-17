@@ -21,7 +21,6 @@ import java.security.SecureRandom;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
 public class XSDController {
 
     @Autowired

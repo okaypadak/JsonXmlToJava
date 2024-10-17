@@ -1,4 +1,4 @@
 server:
   port: 9015
   servlet:
-    context-path: /xml
+    context-path: /XmlXsdToJAXB4SOAP
