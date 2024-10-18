@@ -74,9 +74,20 @@ public class XSDService {
         dosya.transferTo(tempFile);
 
         String xsdDosya = xmlToXsd.convert(tempFile);
-        xsdToJava.convert(new File(xsdDosya), fullOutputDir);
-        javaFileUpdater.updateJavaFile(xsdDosya, fullOutputDir + "\\java\\Envelope.java");
-        commentRemover.removeCommentsAndEmptyLines(fullOutputDir + "\\java\\Envelope.java");
+        List<String> generatedFiles = xsdToJava.convert(new File(xsdDosya), fullOutputDir);
+
+        generatedFiles.forEach(tek -> {
+            if(!tek.contains("Object")) {
+                try {
+                    javaFileUpdater.updateJavaFile(xsdDosya, fullOutputDir +"\\"+ tek);
+                    commentRemover.removeCommentsAndEmptyLines(fullOutputDir +"\\"+ tek);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+
     }
 
     private void processXsdFile(MultipartFile dosya, String fullOutputDir) throws IOException {

@@ -52,7 +52,6 @@ public class JavaFileUpdater {
                         namespace = attributes.item(j).getNodeValue();
                     }
 
-
                 }
 
                 if (!namespace.isEmpty()) {

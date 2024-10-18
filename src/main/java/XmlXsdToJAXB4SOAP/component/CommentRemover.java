@@ -16,7 +16,7 @@ public class CommentRemover {
         File file = new File(filePath);
 
         if (!file.exists() || !file.isFile()) {
-            throw new IOException("Geçersiz dosya yolu: " + filePath);
+            throw new IOException("Error: " + filePath);
         }
 
         File tempFile = new File(file.getAbsolutePath() + ".tmp");
@@ -28,30 +28,26 @@ public class CommentRemover {
             boolean isMultiLineComment = false;
 
             while ((line = reader.readLine()) != null) {
-                line = line.trim(); // Satırı baştaki ve sondaki boşluklardan arındır
+                line = line.trim();
 
-                // Çok satırlı yorum kontrolü
                 if (isMultiLineComment) {
                     if (line.contains("*/")) {
                         isMultiLineComment = false;
-                        line = line.substring(line.indexOf("*/") + 2).trim(); // Yorum sonundan sonraki kısmı al
+                        line = line.substring(line.indexOf("*/") + 2).trim();
                     } else {
                         continue; // Yorum içindeyiz, bu satırı atla
                     }
                 }
 
-                // Tek satırlık yorum kontrolü
                 if (line.startsWith("//")) {
                     continue; // Tek satırlık yorumu atla
                 }
 
-                // Çok satırlı yorum başlangıcı kontrolü
                 if (line.contains("/*")) {
                     isMultiLineComment = true;
-                    line = line.substring(0, line.indexOf("/*")).trim(); // Yorum başlangıcından öncesini al
+                    line = line.substring(0, line.indexOf("/*")).trim();
                 }
 
-                // Boş satır değilse yaz
                 if (!line.isEmpty()) {
                     writer.write(line);
                     writer.newLine();
@@ -59,7 +55,6 @@ public class CommentRemover {
             }
         }
 
-        // Geçici dosyayı orijinal dosya ile değiştir
         if (!file.delete()) {
             throw new IOException("Orijinal dosya silinemedi: " + filePath);
         }

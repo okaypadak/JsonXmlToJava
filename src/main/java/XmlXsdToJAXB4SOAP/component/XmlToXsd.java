@@ -20,7 +20,7 @@ public class XmlToXsd {
 
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true); // Namespace'lerin farkında ol
+            factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(xmlFile);
 
@@ -40,7 +40,7 @@ public class XmlToXsd {
                 writer.write(xsdContent.toString());
             }
 
-            System.out.println("XSD dosyası başarıyla oluşturuldu: " + xsdFile);
+            System.out.println("XSD success: " + xsdFile);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,7 +63,6 @@ public class XmlToXsd {
     private void extractNamespaces(Document document) {
         NamedNodeMap attributes = document.getDocumentElement().getAttributes();
 
-        // Define regex pattern for extracting the namespace prefix and URI
         Pattern pattern = Pattern.compile("xmlns:(\\w+)=\"([^\"]+)\"");
 
         for (int i = 0; i < attributes.getLength(); i++) {
@@ -79,7 +78,6 @@ public class XmlToXsd {
                     String prefix = matcher.group(1); // Namespace prefix
                     String uri = matcher.group(2); // Namespace URI
 
-                    // Add the namespace to the HashMap
                     namespaceMap.put(prefix, uri);
                 }
             }
@@ -103,7 +101,7 @@ public class XmlToXsd {
         }
 
         if (hasChildElements) {
-            // Namespace kontrolü yap ve varsa ekle
+
             if (namespaceMap.containsKey(namespace)) {
                 xsd.append("<xs:element name=\"").append(elementName).append("\" xmlns:").append(namespace).append("=\"").append(namespaceMap.get(namespace)).append("\">\n");
             } else {
@@ -124,7 +122,6 @@ public class XmlToXsd {
         } else {
             String type = inferDataType(element.getTextContent());
 
-            // Namespace kontrolü yap ve varsa ekle
             if (namespaceMap.containsKey(namespace)) {
                 xsd.append("<xs:element name=\"").append(elementName).append("\" type=\"").append(type).append("\" xmlns:").append(namespace).append("=\"").append(namespaceMap.get(namespace)).append("\"/>\n");
             } else {
