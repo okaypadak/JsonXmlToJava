@@ -53,11 +53,10 @@ public class JavaFileUpdater {
                     }
 
 
-
                 }
 
-                if(!namespace.isEmpty()) {
-                    elementNamespaceMap.put(name,namespace);
+                if (!namespace.isEmpty()) {
+                    elementNamespaceMap.put(name, namespace);
                 }
 
             }
@@ -81,32 +80,27 @@ public class JavaFileUpdater {
             String requiredRegex = "@XmlElement\\(required\\s*=\\s*true\\s*\\)\\s*";
             content = content.replaceAll(requiredRegex, "");
 
-            // Her bir element ve namespace için işlemi gerçekleştir
             for (HashMap.Entry<String, String> entry : elementNamespaceMap.entrySet()) {
                 String elementName = entry.getKey();
                 String namespace = entry.getValue();
 
-                // @XmlElement varsa regex ile güncelle
                 String nameRegex = "@XmlElement\\(name\\s*=\\s*\"" + elementName + "\"(.*)\\)";
                 Pattern namePattern = Pattern.compile(nameRegex);
                 Matcher nameMatcher = namePattern.matcher(content);
 
                 if (nameMatcher.find()) {
-                    // Eğer @XmlElement zaten varsa, namespace'i ekle
                     String oldAnnotation = nameMatcher.group();
                     if (!oldAnnotation.contains("namespace")) {
                         String newAnnotation = oldAnnotation.substring(0, oldAnnotation.length() - 1) + ", namespace = \"" + namespace + "\")";
                         content = content.replace(oldAnnotation, newAnnotation);
                     }
                 } else {
-                    // Eğer @XmlElement yoksa, tam anotasyonu ekle
                     String newAnnotation = "@XmlElement(name = \"" + elementName + "\", required = true, namespace = \"" + namespace + "\")\n";
                     String fieldRegex = "(protected\\s+.*\\s+" + elementName + "\\s*;)";
                     content = content.replaceAll(fieldRegex, newAnnotation + "$1");
                 }
             }
 
-            // Güncellenmiş içeriği dosyaya yaz
             Files.write(path, content.getBytes());
         } catch (IOException e) {
             e.printStackTrace();

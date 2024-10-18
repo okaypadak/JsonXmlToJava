@@ -2,6 +2,7 @@ package XmlXsdToJAXB4SOAP.service;
 
 import XmlXsdToJAXB4SOAP.component.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -33,11 +34,14 @@ public class XSDService {
     @Autowired
     private CommentRemover commentRemover;
 
+    @Value("${local-path}")
+    private String local_path;
+
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public ResponseEntity<InputStreamResource> convertXSD(List<MultipartFile> dosyalar) throws IOException {
-        String outputDir = "C:\\generated";
+        String outputDir = local_path;
         String randomDir = generateRandomString(10);
         String fullOutputDir = outputDir + File.separator + randomDir;
 

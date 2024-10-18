@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dosya Yükle</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Arka plan rengi */
+        }
+        .container {
+            margin-top: 100px; /* Üstten boşluk */
+        }
+        .card {
+            border: none; /* Kart kenarlarını gizle */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="text-center">XSD-XML to JAXB Class Dönüştürücü</h2>
+                    <form action="/XmlXsdToJAXB4SOAP/convert" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="dosya">Dosya Yükleyin:</label>
+                            <input type="file" id="dosya" name="dosya" class="form-control" multiple required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Yükle ve Dönüştür</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
