@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class Xml2javaApplicationTests {
+class XmlXsdToJAXB4SOAPApplicationTests {
 
 	@Test
 	void contextLoads() {

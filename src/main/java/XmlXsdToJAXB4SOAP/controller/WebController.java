@@ -18,24 +18,6 @@ import java.util.List;
 @Controller
 public class WebController {
 
-    @Autowired
-    XSDToJava xsdToJava;
-
-    @Autowired
-    Zip zip;
-
-    @Autowired
-    XmlToXsd xmlToXsd;
-
-    @Autowired
-    JavaFileUpdater javaFileUpdater;
-
-    @Autowired
-    CommentRemover commentRemover;
-
-    @Autowired
-    private XSDService xsdService;
-
     @GetMapping("/")
     public String showForm() {
         return "index";
