@@ -15,23 +15,3 @@ This service is designed to convert SOAP XML or XSD files into JAXB classes. The
 
 ## Contribution
 Feel free to contribute and enhance this project for better functionality!
-
----
-
-# SOAP XML/XSD'den JAXB Sınıflarına Dönüştürme Servisi
-
-Bu servis, SOAP XML veya XSD dosyalarını JAXB sınıflarına dönüştürmek için tasarlanmıştır. Bu servisin temel amacı, bu dosyaları JAXB sınıflarına dönüştürerek Java'da isteklerin ve yanıtların kolayca serileştirilmesi ve deserileştirilmesini sağlamaktır.
-
-## Özellikler
-- **Dönüştürme**: SOAP XML veya XSD dosyalarını Java JAXB sınıflarına dönüştürme.
-- **Serileştirme**: Java nesnelerini XML formatına kolayca dönüştürme.
-- **Deserileştirme**: XML verilerini işleme için Java nesnelerine geri dönüştürme.
-- **Kullanım Kolaylığı**: SOAP web servisleriyle entegrasyonu basitleştirir.
-
-## Kullanım
-1. Bu servisi Java projenize dahil edin.
-2. XML veya XSD dosyalarınızı JAXB sınıflarına dönüştürmek için sağlanan yöntemleri kullanın.
-3. Oluşturulan JAXB sınıflarını SOAP mesajlarının serileştirilmesi ve deserileştirilmesi için kullanın.
-
-## Katkıda Bulunma
-Katkıda bulunmaktan çekinmeyin ve bu projeyi daha iyi işlevsellik için geliştirin!

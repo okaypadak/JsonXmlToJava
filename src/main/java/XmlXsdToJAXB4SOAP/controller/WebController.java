@@ -9,12 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class WebController {
 
-    @Autowired
-    Zip zip;
-
-    @Autowired
-    private Converter converter;
-
     @GetMapping("/")
     public String showForm() {
         return "index";
