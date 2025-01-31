@@ -13,7 +13,7 @@ public class Zip {
     public void zipDirectory(String sourceDirPath, String zipFilePath) throws IOException {
         Path zipFile = Files.createFile(Paths.get(zipFilePath));
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFile));
-             var paths = Files.walk(Paths.get(sourceDirPath+"\\java\\"))) {
+             var paths = Files.walk(Paths.get(sourceDirPath))) {
 
             paths.filter(path -> !Files.isDirectory(path))
                     .forEach(path -> {

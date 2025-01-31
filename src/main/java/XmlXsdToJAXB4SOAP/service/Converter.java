@@ -17,22 +17,15 @@ import java.security.SecureRandom;
 import java.util.List;
 
 @Service
-public class XSDService {
+public class Converter {
 
     @Autowired
-    private XSDToJava xsdToJava;
+    private XMLToJAXB xmlToJAXB;
 
     @Autowired
     private Zip zip;
 
-    @Autowired
-    private XmlToXsd xmlToXsd;
 
-    @Autowired
-    private JavaFileUpdater javaFileUpdater;
-
-    @Autowired
-    private CommentRemover commentRemover;
 
     @Value("${local-path}")
     private String local_path;
@@ -40,7 +33,7 @@ public class XSDService {
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public ResponseEntity<InputStreamResource> convertXSD(List<MultipartFile> dosyalar) throws IOException {
+    public ResponseEntity<InputStreamResource> convertXSD(List<MultipartFile> dosyalar) throws Exception {
         String outputDir = local_path;
         String randomDir = generateRandomString(10);
         String fullOutputDir = outputDir + File.separator + randomDir;
@@ -52,20 +45,15 @@ public class XSDService {
                 return ResponseEntity.badRequest().body(null);
             }
 
-            if (fileName.toLowerCase().endsWith(".xml")) {
-                processXmlFile(dosya, fullOutputDir);
-            } else if (fileName.toLowerCase().endsWith(".xsd")) {
-                processXsdFile(dosya, fullOutputDir);
-            } else {
-                return ResponseEntity.badRequest().body(null);
-            }
+            processXmlFile(dosya, fullOutputDir);
         }
 
         return createZipResponse(fullOutputDir);
     }
 
-    private void processXmlFile(MultipartFile dosya, String fullOutputDir) throws IOException {
-        File tempDir = new File(fullOutputDir + "\\xml");
+
+    private void processXmlFile(MultipartFile dosya, String fullOutputDir) throws Exception {
+        File tempDir = new File(fullOutputDir + "/xml");
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
@@ -73,33 +61,7 @@ public class XSDService {
         File tempFile = File.createTempFile("schema", ".xml", tempDir);
         dosya.transferTo(tempFile);
 
-        String xsdDosya = xmlToXsd.convert(tempFile);
-        List<String> generatedFiles = xsdToJava.convert(new File(xsdDosya), fullOutputDir);
-
-        generatedFiles.forEach(tek -> {
-            if(!tek.contains("Object")) {
-                try {
-                    javaFileUpdater.updateJavaFile(xsdDosya, fullOutputDir +"\\"+ tek);
-                    commentRemover.removeCommentsAndEmptyLines(fullOutputDir +"\\"+ tek);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-
-
-    }
-
-    private void processXsdFile(MultipartFile dosya, String fullOutputDir) throws IOException {
-        File tempDir = new File(fullOutputDir + "\\xsd");
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-
-        File tempFile = File.createTempFile("schema", ".xsd", tempDir);
-        dosya.transferTo(tempFile);
-
-        xsdToJava.convert(tempFile, fullOutputDir);
+        XMLToJAXB.convert(tempFile, fullOutputDir);
     }
 
     private ResponseEntity<InputStreamResource> createZipResponse(String fullOutputDir) throws IOException {
