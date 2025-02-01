@@ -1,4 +1,4 @@
-package XmlXsdToJAXB4SOAP.component;
+package XmlToJAXB.component;
 
 import org.springframework.stereotype.Component;
 

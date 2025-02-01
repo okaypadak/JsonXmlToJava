@@ -1,8 +1,5 @@
-package XmlXsdToJAXB4SOAP.controller;
+package XmlToJAXB.controller;
 
-import XmlXsdToJAXB4SOAP.component.*;
-import XmlXsdToJAXB4SOAP.service.Converter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 

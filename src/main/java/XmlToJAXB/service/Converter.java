@@ -1,6 +1,6 @@
-package XmlXsdToJAXB4SOAP.service;
+package XmlToJAXB.service;
 
-import XmlXsdToJAXB4SOAP.component.*;
+import XmlToJAXB.component.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;

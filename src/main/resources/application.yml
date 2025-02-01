@@ -1,7 +1,7 @@
 server:
   port: 9015
   servlet:
-    context-path: /XmlXsdToJAXB4SOAP
+    context-path: /XmlToJAXB
 
 
 spring:

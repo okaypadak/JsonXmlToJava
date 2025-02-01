@@ -1,4 +1,4 @@
-package XmlXsdToJAXB4SOAP.component;
+package XmlToJAXB.component;
 
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -106,22 +106,16 @@ public class XMLToJAXB {
         for (ElementInfo element : classMap.get(parent)) {
             if (element.isClass) {
                 if (element.isRoot) {
-                    writer.write("@XmlRootElement(name=\"" + element.name + "\", namespace=\"" + element.namespace + "\")\n");
+                    writer.write("@XmlRootElement(name=\"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ")\n");
                 }
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
-                //writer.write("@XmlType(name = \"" + element.name + "\", namespace=\"" + element.namespace + "\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                writer.write("@XmlType(name = \"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
                 writer.write("@Getter\n@Setter\n");
                 writer.write("public class " + toClassName(element.name) + " {\n");
 
-                // Field olarak ekleme işlemi
                 for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
-                    if (child.isClass) {
-                        writer.write("    @XmlElement(name=\"" + child.name + "\", namespace=\"" + child.namespace + "\")\n");
-                        writer.write("    private " + toClassName(child.name) + " " + child.name.toLowerCase() + ";\n");
-                    } else {
-                        writer.write("    @XmlElement(name=\"" + child.name + "\", namespace=\"" + child.namespace + "\")\n");
-                        writer.write("    private " + child.type + " " + child.name.toLowerCase() + ";\n");
-                    }
+                    writer.write("    @XmlElement(name=\"" + child.name + "\"" + (child.namespace != null ? ", namespace=\"" + child.namespace + "\"" : "") + ")\n");
+                    writer.write("    private " + (child.isClass ? toClassName(child.name) : child.type) + " " + child.name + ";\n");
                 }
 
                 generateClass(writer, element.name, classMap);

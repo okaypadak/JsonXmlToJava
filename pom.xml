@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>tr.gov.ptt</groupId>
-    <artifactId>XmlXsdToJAXB4SOAP</artifactId>
+    <artifactId>XmlToJAXB</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>XmlXsdToJAXB4SOAP</name>
+    <name>XmlToJAXB</name>
     <description>Demo project for Spring Boot</description>
     <url/>
     <licenses>

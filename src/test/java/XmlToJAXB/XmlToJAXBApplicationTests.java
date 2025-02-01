@@ -1,10 +1,10 @@
-package XmlXsdToJAXB4SOAP;
+package XmlToJAXB;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class XmlXsdToJAXB4SOAPApplicationTests {
+class XmlToJAXBApplicationTests {
 
 	@Test
 	void contextLoads() {
