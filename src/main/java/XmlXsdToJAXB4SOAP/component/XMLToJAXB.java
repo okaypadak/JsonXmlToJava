@@ -9,10 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +70,8 @@ public class XMLToJAXB {
             } else if (content.matches("\\d+\\.\\d+")) {
                 type = "BigDecimal";
             }
+        } else {
+            type = toClassName(localName);
         }
 
         elementList.add(new ElementInfo(localName, namespaceURI, parent, isClass, isRoot, type));
@@ -89,8 +88,8 @@ public class XMLToJAXB {
         File file = new File(outputPath, "GeneratedJAXBClasses.java");
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("package com.generated;\n\n");
-            writer.write("import lombok.Getter;\n");
-            writer.write("import lombok.Setter;\n\n");
+            writer.write("import jakarta.xml.bind.annotation.*;\n");
+            writer.write("import lombok.Getter;\nimport lombok.Setter;\n\n");
 
             Map<String, List<ElementInfo>> classMap = new HashMap<>();
             for (ElementInfo element : elementList) {
@@ -107,21 +106,26 @@ public class XMLToJAXB {
         for (ElementInfo element : classMap.get(parent)) {
             if (element.isClass) {
                 if (element.isRoot) {
-                    writer.write("@XmlRootElement(name=\"" + element.name + "\")\n");
+                    writer.write("@XmlRootElement(name=\"" + element.name + "\", namespace=\"" + element.namespace + "\")\n");
                 }
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
-                writer.write("@XmlType(name = \"" + element.name + "\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                //writer.write("@XmlType(name = \"" + element.name + "\", namespace=\"" + element.namespace + "\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
                 writer.write("@Getter\n@Setter\n");
                 writer.write("public class " + toClassName(element.name) + " {\n");
+
+                // Field olarak ekleme işlemi
+                for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
+                    if (child.isClass) {
+                        writer.write("    @XmlElement(name=\"" + child.name + "\", namespace=\"" + child.namespace + "\")\n");
+                        writer.write("    private " + toClassName(child.name) + " " + child.name.toLowerCase() + ";\n");
+                    } else {
+                        writer.write("    @XmlElement(name=\"" + child.name + "\", namespace=\"" + child.namespace + "\")\n");
+                        writer.write("    private " + child.type + " " + child.name.toLowerCase() + ";\n");
+                    }
+                }
+
                 generateClass(writer, element.name, classMap);
                 writer.write("}\n\n");
-            } else {
-                if (element.namespace != null) {
-                    writer.write("@XmlElement(name=\"" + element.name + "\", namespace=\"" + element.namespace + "\") ");
-                } else {
-                    writer.write("@XmlElement(name=\"" + element.name + "\") ");
-                }
-                writer.write("private " + element.type + " " + element.name.toLowerCase() + ";\n");
             }
         }
     }
