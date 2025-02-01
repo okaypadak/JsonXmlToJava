@@ -1,20 +1,26 @@
 package XmlXsdToJAXB4SOAP.component;
 
+import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.springframework.stereotype.Service;
-import org.w3c.dom.*;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.*;
-import lombok.Data;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class XMLToJAXB {
 
     private static List<ElementInfo> elementList = new ArrayList<>();
 
-    public static void convert(File xmlFile, String fullOutputDir) throws Exception {// XML dosyanızın yolu
+    public static void convert(File xmlFile, String fullOutputDir) throws Exception {
         parseXML(xmlFile);
         generateJAXBClass(fullOutputDir);
     }
@@ -24,13 +30,15 @@ public class XMLToJAXB {
         String namespace;
         String parent;
         boolean isClass;
+        boolean isRoot;
         String type;
 
-        ElementInfo(String name, String namespace, String parent, boolean isClass, String type) {
+        ElementInfo(String name, String namespace, String parent, boolean isClass, boolean isRoot, String type) {
             this.name = name;
             this.namespace = namespace;
             this.parent = parent;
             this.isClass = isClass;
+            this.isRoot = isRoot;
             this.type = type;
         }
     }
@@ -40,10 +48,10 @@ public class XMLToJAXB {
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.parse(file);
-        extractElements(doc.getDocumentElement(), null);
+        extractElements(doc.getDocumentElement(), null, true);
     }
 
-    private static void extractElements(Element element, String parent) {
+    private static void extractElements(Element element, String parent, boolean isRoot) {
         String namespaceURI = element.getNamespaceURI();
         String localName = element.getLocalName();
         boolean isClass = false;
@@ -67,12 +75,12 @@ public class XMLToJAXB {
             }
         }
 
-        elementList.add(new ElementInfo(localName, namespaceURI, parent, isClass, type));
+        elementList.add(new ElementInfo(localName, namespaceURI, parent, isClass, isRoot, type));
 
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
             if (node instanceof Element) {
-                extractElements((Element) node, localName);
+                extractElements((Element) node, localName, false);
             }
         }
     }
@@ -81,9 +89,8 @@ public class XMLToJAXB {
         File file = new File(outputPath, "GeneratedJAXBClasses.java");
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("package com.generated;\n\n");
-            writer.write("import javax.xml.bind.annotation.*;\n");
-            writer.write("import lombok.Data;\n");
-            writer.write("import java.math.BigDecimal;\n\n");
+            writer.write("import lombok.Getter;\n");
+            writer.write("import lombok.Setter;\n\n");
 
             Map<String, List<ElementInfo>> classMap = new HashMap<>();
             for (ElementInfo element : elementList) {
@@ -99,12 +106,15 @@ public class XMLToJAXB {
 
         for (ElementInfo element : classMap.get(parent)) {
             if (element.isClass) {
+                if (element.isRoot) {
+                    writer.write("@XmlRootElement(name=\"" + element.name + "\")\n");
+                }
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
-                writer.write("@Getter\n");
-                writer.write("@Setter\n");
-                writer.write("public static class " + toClassName(element.name) + " {\n");
+                writer.write("@XmlType(name = \"" + element.name + "\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                writer.write("@Getter\n@Setter\n");
+                writer.write("public class " + toClassName(element.name) + " {\n");
                 generateClass(writer, element.name, classMap);
-                writer.write("}\n");
+                writer.write("}\n\n");
             } else {
                 if (element.namespace != null) {
                     writer.write("@XmlElement(name=\"" + element.name + "\", namespace=\"" + element.namespace + "\") ");
@@ -114,6 +124,12 @@ public class XMLToJAXB {
                 writer.write("private " + element.type + " " + element.name.toLowerCase() + ";\n");
             }
         }
+    }
+
+    private static String getPropOrder(String className, Map<String, List<ElementInfo>> classMap) {
+        return classMap.getOrDefault(className, new ArrayList<>()).stream()
+                .map(e -> "\"" + e.name + "\"")
+                .collect(Collectors.joining(", "));
     }
 
     private static String toClassName(String name) {
