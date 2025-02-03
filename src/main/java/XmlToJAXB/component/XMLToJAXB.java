@@ -107,11 +107,15 @@ public class XMLToJAXB {
             if (element.isClass) {
                 if (element.isRoot) {
                     writer.write("@XmlRootElement(name=\"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ")\n");
+                    writer.write("@XmlType(name = \"" + "\"" + ", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                    writer.write("public class " + toClassName(element.name) + " {\n");
+                } else {
+                    writer.write("@XmlType(name = \"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                    writer.write("public static class " + toClassName(element.name) + " {\n");
                 }
+
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
-                writer.write("@XmlType(name = \"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
                 writer.write("@Getter\n@Setter\n");
-                writer.write("public class " + toClassName(element.name) + " {\n");
 
                 for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
                     writer.write("    @XmlElement(name=\"" + child.name + "\"" + (child.namespace != null ? ", namespace=\"" + child.namespace + "\"" : "") + ")\n");

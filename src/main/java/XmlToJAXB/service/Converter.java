@@ -26,17 +26,23 @@ public class Converter {
     private Zip zip;
 
 
-
     @Value("${local-path}")
     private String local_path;
 
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public ResponseEntity<InputStreamResource> convertXSD(List<MultipartFile> dosyalar) throws Exception {
+    public ResponseEntity<InputStreamResource> convert(List<MultipartFile> dosyalar) throws Exception {
         String outputDir = local_path;
         String randomDir = generateRandomString(10);
         String fullOutputDir = outputDir + File.separator + randomDir;
+
+        // Önceki verileri temizle
+        File outputFolder = new File(fullOutputDir);
+        if (outputFolder.exists()) {
+            deleteDirectory(outputFolder);
+        }
+        outputFolder.mkdirs();
 
         for (MultipartFile dosya : dosyalar) {
             String fileName = dosya.getOriginalFilename();
@@ -87,5 +93,17 @@ public class Converter {
             builder.append(ALPHABET.charAt(RANDOM.nextInt(ALPHABET.length())));
         }
         return builder.toString();
+    }
+
+    private void deleteDirectory(File directory) {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteDirectory(file);
+                }
+            }
+        }
+        directory.delete();
     }
 }

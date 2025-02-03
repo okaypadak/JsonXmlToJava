@@ -23,6 +23,6 @@ public class XSDController {
 
     @PostMapping("/convert")
     public ResponseEntity<InputStreamResource> convertXSD(@RequestParam("dosya") List<MultipartFile> dosyalar) throws Exception {
-        return converter.convertXSD(dosyalar);
+        return converter.convert(dosyalar);
     }
 }
