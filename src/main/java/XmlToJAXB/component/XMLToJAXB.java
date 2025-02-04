@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 public class XMLToJAXB {
 
     private static List<ElementInfo> elementList = new ArrayList<>();
+    private static int idCounter = 1;
+    private static Set<String> processedElements = new HashSet<>();
 
     public static void convert(File xmlFile, String fullOutputDir) throws Exception {
         parseXML(xmlFile);
@@ -23,20 +25,24 @@ public class XMLToJAXB {
     }
 
     private static class ElementInfo {
+        int id;
         String name;
         String namespace;
         String parent;
         boolean isClass;
         boolean isRoot;
         String type;
+        boolean isList;
 
-        ElementInfo(String name, String namespace, String parent, boolean isClass, boolean isRoot, String type) {
+        ElementInfo(int id, String name, String namespace, String parent, boolean isClass, boolean isRoot, String type, boolean isList) {
+            this.id = id;
             this.name = name;
             this.namespace = namespace;
             this.parent = parent;
             this.isClass = isClass;
             this.isRoot = isRoot;
             this.type = type;
+            this.isList = isList;
         }
     }
 
@@ -53,13 +59,27 @@ public class XMLToJAXB {
         String localName = element.getLocalName();
         boolean isClass = false;
         String type = "String";
+        boolean isList = false;
+
+        if (parent != null && parent.equals(localName)) {
+            localName += "Sub";
+        }
+
+        String elementKey = parent + ":" + localName;
+        if (processedElements.contains(elementKey)) {
+            return;
+        }
+        processedElements.add(elementKey);
 
         NodeList children = element.getChildNodes();
+        Map<String, Integer> elementCount = new HashMap<>();
+
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
             if (node instanceof Element) {
+                String childName = ((Element) node).getLocalName();
+                elementCount.put(childName, elementCount.getOrDefault(childName, 0) + 1);
                 isClass = true;
-                break;
             }
         }
 
@@ -74,7 +94,8 @@ public class XMLToJAXB {
             type = toClassName(localName);
         }
 
-        elementList.add(new ElementInfo(localName, namespaceURI, parent, isClass, isRoot, type));
+        isList = elementCount.getOrDefault(localName, 0) > 1;
+        elementList.add(new ElementInfo(idCounter++, localName, namespaceURI, parent, isClass, isRoot, type, isList));
 
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
@@ -89,7 +110,7 @@ public class XMLToJAXB {
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("package com.generated;\n\n");
             writer.write("import jakarta.xml.bind.annotation.*;\n");
-            writer.write("import lombok.Getter;\nimport lombok.Setter;\n\n");
+            writer.write("import lombok.Getter;\nimport lombok.Setter;\nimport java.util.List;\n\n");
 
             Map<String, List<ElementInfo>> classMap = new HashMap<>();
             for (ElementInfo element : elementList) {
@@ -107,21 +128,19 @@ public class XMLToJAXB {
             if (element.isClass) {
                 if (element.isRoot) {
                     writer.write("@XmlRootElement(name=\"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ")\n");
-                    writer.write("@XmlType(name=\"" + "\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
+                    writer.write("@XmlType(name=\"\", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
                 } else {
                     writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
                     writer.write("@XmlType(name = \"" + element.name + "\"" + (element.namespace != null ? ", namespace=\"" + element.namespace + "\"" : "") + ", propOrder = {" + getPropOrder(element.name, classMap) + "})\n");
                 }
 
-
                 writer.write("@Getter\n@Setter\n");
                 writer.write((isFirstClass ? "public " : "public static ") + "class " + toClassName(element.name) + " {\n");
 
-                isFirstClass = false;
 
                 for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
                     writer.write("    @XmlElement(name=\"" + child.name + "\"" + (child.namespace != null ? ", namespace=\"" + child.namespace + "\"" : "") + ")\n");
-                    writer.write("    private " + (child.isClass ? toClassName(child.name) : child.type) + " " + child.name + ";\n");
+                    writer.write("    private " + (child.isList ? "List<" + toClassName(child.name) + ">" : (child.isClass ? toClassName(child.name) : child.type)) + " " + child.name + "" + (child.isList ? " = new ArrayList<>();" : "") + "\n");
                 }
 
                 generateClass(writer, element.name, classMap, false);
