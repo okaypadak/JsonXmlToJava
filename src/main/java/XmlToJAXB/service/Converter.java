@@ -1,6 +1,7 @@
 package XmlToJAXB.service;
 
-import XmlToJAXB.component.*;
+import XmlToJAXB.component.XMLToJAXB;
+import XmlToJAXB.component.Zip;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -15,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class Converter {
@@ -32,42 +34,69 @@ public class Converter {
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public ResponseEntity<InputStreamResource> convert(List<MultipartFile> dosyalar) throws Exception {
+    public ResponseEntity<InputStreamResource> convert(List<MultipartFile> files) throws Exception {
         String outputDir = local_path;
         String randomDir = generateRandomString(10);
         String fullOutputDir = outputDir + File.separator + randomDir;
 
-        // Önceki verileri temizle
+
         File outputFolder = new File(fullOutputDir);
         if (outputFolder.exists()) {
             deleteDirectory(outputFolder);
         }
         outputFolder.mkdirs();
 
-        for (MultipartFile dosya : dosyalar) {
-            String fileName = dosya.getOriginalFilename();
+        if (files.size() == 1) {
 
-            if (fileName == null) {
-                return ResponseEntity.badRequest().body(null);
+            MultipartFile file = files.get(0);
+            processXmlFile(file, fullOutputDir);
+
+            return createOneResponse(fullOutputDir, file);
+
+
+        } else {
+
+            for (MultipartFile file : files) {
+                processXmlFile(file, fullOutputDir);
             }
 
-            processXmlFile(dosya, fullOutputDir);
+            return createZipResponse(fullOutputDir);
         }
 
-        return createZipResponse(fullOutputDir);
     }
 
 
-    private void processXmlFile(MultipartFile dosya, String fullOutputDir) throws Exception {
-        File tempDir = new File(fullOutputDir + "/xml");
+    private void processXmlFile(MultipartFile file, String fullOutputDir) throws Exception {
+        File tempDir = new File(fullOutputDir);
+
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
 
-        File tempFile = File.createTempFile("schema", ".xml", tempDir);
-        dosya.transferTo(tempFile);
+        File tempFile = new File(tempDir, Objects.requireNonNull(file.getOriginalFilename()));
 
-        XMLToJAXB.convert(tempFile, fullOutputDir);
+        file.transferTo(tempFile);
+
+        xmlToJAXB.convert(tempFile, fullOutputDir);
+    }
+
+    private ResponseEntity<InputStreamResource> createOneResponse(String fullOutputDir, MultipartFile file) throws IOException {
+
+        String fileName = Objects.requireNonNull(file.getOriginalFilename()).replace(".xml", ".java");
+
+        String FilePath = fullOutputDir + File.separator + fileName;
+
+        File newFile = new File(FilePath);
+        InputStreamResource resource = new InputStreamResource(new FileInputStream(newFile));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(newFile.length()));
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(resource);
     }
 
     private ResponseEntity<InputStreamResource> createZipResponse(String fullOutputDir) throws IOException {
