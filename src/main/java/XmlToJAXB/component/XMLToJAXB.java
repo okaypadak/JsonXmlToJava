@@ -82,7 +82,7 @@ public class XMLToJAXB {
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
             if (node instanceof Element) {
-                String childName = ((Element) node).getLocalName();
+                String childName = node.getLocalName();
                 String childKey = localName + ":" + childName;
                 elementCount.put(childKey, elementCount.getOrDefault(childKey, 0) + 1);
                 isClass = true;
@@ -92,7 +92,7 @@ public class XMLToJAXB {
         if (!isClass) {
             String content = element.getTextContent().trim();
             if (content.matches("\\d+")) {
-                type = "Long";
+                type = "Integer";
             } else if (content.matches("\\d+\\.\\d+")) {
                 type = "BigDecimal";
             }
@@ -124,11 +124,12 @@ public class XMLToJAXB {
                 classMap.computeIfAbsent(element.parent, k -> new ArrayList<>()).add(element);
             }
 
-            generateClass(writer, null, classMap, true);
+            generateClass(name, writer, null, classMap, true);
         }
     }
 
-    private void generateClass(FileWriter writer, String parent, Map<String, List<ElementInfo>> classMap, boolean isFirstClass) throws Exception {
+    private void generateClass(String name, FileWriter writer, String parent, Map<String, List<ElementInfo>> classMap, boolean isFirstClass) throws Exception {
+
         if (!classMap.containsKey(parent)) return;
 
         for (ElementInfo element : classMap.get(parent)) {
@@ -143,15 +144,15 @@ public class XMLToJAXB {
 
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
                 writer.write("@Getter\n@Setter\n");
-                writer.write((isFirstClass ? "public " : "public static ") + "class " + toClassName(element.name) + " {\n");
 
+                writer.write((isFirstClass ? "public " : "public static ") + "class " + (isFirstClass ? toClassName(name.replace(".xml","")) : toClassName(element.name)) + " {\n");
 
                 for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
                     writer.write("    @XmlElement(name=\"" + child.name + "\"" + (child.namespace != null ? ", namespace=\"" + child.namespace + "\"" : "") + ")\n");
                     writer.write("    private " + (child.isList ? "List<" + toClassName(child.name) + ">" : (child.isClass ? toClassName(child.name) : child.type)) + " " + child.name + "" + (child.isList ? " = new ArrayList<>()" : "") + ";\n");
                 }
 
-                generateClass(writer, element.name, classMap, false);
+                generateClass(name, writer, element.name, classMap, false);
                 writer.write("}\n\n");
             }
         }
