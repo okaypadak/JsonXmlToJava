@@ -1,7 +1,7 @@
-server:
-  port: 9015
-  servlet:
-    context-path: /XmlToJAXB
+#server:
+#  port: 9015
+#  servlet:
+#    context-path: /XmlToJAXB
 
 
 spring:
@@ -10,4 +10,4 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-local-path:  ${LOCAL_PATH:C:\Users\OKAY\Desktop}
+local-path:  ${LOCAL_PATH:/tmp}

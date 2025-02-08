@@ -62,8 +62,8 @@ public class XMLToJAXB {
         String namespaceURI = element.getNamespaceURI();
         String localName = element.getLocalName();
         boolean isClass = false;
-        String type = "String";
         boolean isList = false;
+        String type = "String";
 
         if (parent != null && parent.equals(localName)) {
             localName += "Sub";
@@ -83,7 +83,14 @@ public class XMLToJAXB {
             Node node = children.item(i);
             if (node instanceof Element) {
                 String childName = node.getLocalName();
-                String childKey = localName + ":" + childName;
+                String childKey;
+
+                if(localName.equals(childName)) {
+                    childKey = localName + ":" + childName+"Sub";
+                } else {
+                    childKey = localName + ":" + childName;
+                }
+
                 elementCount.put(childKey, elementCount.getOrDefault(childKey, 0) + 1);
                 isClass = true;
             }
