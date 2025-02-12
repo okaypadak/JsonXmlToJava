@@ -1,17 +1,18 @@
-# SOAP XML/XSD to JAXB Converter Service
+# Spring Service for JSON to Java & XML to JAXB Conversion
 
-This service is designed to convert SOAP XML or XSD files into JAXB classes. The main purpose of this service is to facilitate the conversion of these files into JAXB classes, allowing for easy serialization and deserialization of requests and responses in Java.
+This project provides a Spring service that converts JSON data to Java classes and XML data to JAXB (Java Architecture for XML Binding) classes. Additionally, Lombok is used to simplify the code and generate clean, maintainable classes.
 
 ## Features
-- **Conversion**: Transform SOAP XML or XSD files into Java JAXB classes.
-- **Serialization**: Easily convert Java objects into XML format.
-- **Deserialization**: Convert XML data back into Java objects for processing.
-- **Ease of Use**: Simplifies the integration with SOAP web services.
 
-## How to Use
-1. Include this service in your Java project.
-2. Use the provided methods to convert your XML or XSD files to JAXB classes.
-3. Utilize the generated JAXB classes for serialization and deserialization of SOAP messages.
+- **JSON to Java conversion:** Automatically converts JSON data into Java classes.
+- **XML to JAXB class conversion:** Generates JAXB classes based on XML schemas.
+- **Lombok integration:** Lombok is used for concise Java code.
+- **Clean and readable classes:** Automatically generated classes are designed to be clean, easy to maintain, and easy to understand.
 
-## Contribution
-Feel free to contribute and enhance this project for better functionality!
+## Requirements
+
+- Java 11 or higher
+- Spring Boot
+- Lombok library
+
+http://jsonxmltojava.up.railway.app
