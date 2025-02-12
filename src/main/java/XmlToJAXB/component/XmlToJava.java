@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class XMLToJAXB {
+public class XmlToJava {
 
     private List<ElementInfo> elementList = new ArrayList<>();
     private int idCounter = 1;

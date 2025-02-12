@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-public class XSDController {
+public class ConverterController {
 
     @Autowired
     Zip zip;
@@ -22,7 +22,7 @@ public class XSDController {
     private Converter converter;
 
     @PostMapping("/convert")
-    public ResponseEntity<InputStreamResource> convertXSD(@RequestParam("dosya") List<MultipartFile> dosyalar) throws Exception {
-        return converter.convert(dosyalar);
+    public ResponseEntity<InputStreamResource> convertXSD(@RequestParam("dosya") List<MultipartFile> file) throws Exception {
+        return converter.convert(file);
     }
 }

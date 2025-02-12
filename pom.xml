@@ -8,11 +8,11 @@
         <version>3.3.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>tr.gov.ptt</groupId>
-    <artifactId>XmlToJAXB</artifactId>
+    <groupId>ky.pdk</groupId>
+    <artifactId>JsonXmlToJava</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>XmlToJAXB</name>
-    <description>Demo project for Spring Boot</description>
+    <name>JsonXmlToJava</name>
+    <description>JsonXmlToJava</description>
     <url/>
     <licenses>
         <license/>

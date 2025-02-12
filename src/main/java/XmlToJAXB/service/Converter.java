@@ -1,6 +1,7 @@
 package XmlToJAXB.service;
 
-import XmlToJAXB.component.XMLToJAXB;
+import XmlToJAXB.component.JsonToJava;
+import XmlToJAXB.component.XmlToJava;
 import XmlToJAXB.component.Zip;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +23,10 @@ import java.util.Objects;
 public class Converter {
 
     @Autowired
-    private XMLToJAXB xmlToJAXB;
+    private XmlToJava xmlToJava;
+
+    @Autowired
+    private JsonToJava jsonToJava;
 
     @Autowired
     private Zip zip;
@@ -39,34 +43,29 @@ public class Converter {
         String randomDir = generateRandomString(10);
         String fullOutputDir = outputDir + File.separator + randomDir;
 
-
         File outputFolder = new File(fullOutputDir);
+
         if (outputFolder.exists()) {
             deleteDirectory(outputFolder);
         }
+
         outputFolder.mkdirs();
 
         if (files.size() == 1) {
-
             MultipartFile file = files.get(0);
-            processXmlFile(file, fullOutputDir);
+            processFile(file, fullOutputDir);
 
             return createOneResponse(fullOutputDir, file);
-
-
         } else {
-
             for (MultipartFile file : files) {
-                processXmlFile(file, fullOutputDir);
+                processFile(file, fullOutputDir);
             }
 
             return createZipResponse(fullOutputDir);
         }
-
     }
 
-
-    private void processXmlFile(MultipartFile file, String fullOutputDir) throws Exception {
+    private void processFile(MultipartFile file, String fullOutputDir) throws Exception {
         File tempDir = new File(fullOutputDir);
 
         if (!tempDir.exists()) {
@@ -74,19 +73,30 @@ public class Converter {
         }
 
         File tempFile = new File(tempDir, Objects.requireNonNull(file.getOriginalFilename()));
-
         file.transferTo(tempFile);
 
-        xmlToJAXB.convert(tempFile, fullOutputDir);
+        String fileName = file.getOriginalFilename().toLowerCase();
+
+        if (fileName.endsWith(".xml")) {
+            xmlToJava.convert(tempFile, fullOutputDir);
+        } else if (fileName.endsWith(".json")) {
+            jsonToJava.convert(tempFile, fullOutputDir);
+        } else {
+            throw new IllegalArgumentException("Unsupported file type: " + fileName);
+        }
     }
 
+
     private ResponseEntity<InputStreamResource> createOneResponse(String fullOutputDir, MultipartFile file) throws IOException {
+        String fileName = Objects.requireNonNull(file.getOriginalFilename()).replaceAll("\\.(xml|json)$", ".java");
 
-        String fileName = Objects.requireNonNull(file.getOriginalFilename()).replace(".xml", ".java");
+        String filePath = fullOutputDir + File.separator + fileName;
+        File newFile = new File(filePath);
 
-        String FilePath = fullOutputDir + File.separator + fileName;
+        if (!newFile.exists()) {
+            throw new IOException("Java file not created: " + filePath);
+        }
 
-        File newFile = new File(FilePath);
         InputStreamResource resource = new InputStreamResource(new FileInputStream(newFile));
 
         HttpHeaders headers = new HttpHeaders();
@@ -98,6 +108,7 @@ public class Converter {
                 .headers(headers)
                 .body(resource);
     }
+
 
     private ResponseEntity<InputStreamResource> createZipResponse(String fullOutputDir) throws IOException {
         String zipFilePath = fullOutputDir + ".zip";
