@@ -24,48 +24,56 @@ public class JsonToJava {
         String type;
         boolean isClass;
         boolean isList;
+        String parentName;
 
-        ElementInfo(String name, String type, boolean isClass, boolean isList) {
+        ElementInfo(String name, String type, boolean isClass, boolean isList, String parentName) {
             this.name = name;
             this.type = type;
             this.isClass = isClass;
             this.isList = isList;
+            this.parentName = parentName;
         }
     }
 
     private void parseJson(File file) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(file);
-        extractElements(rootNode, "Root");
+        String rootClassName = toClassName(file.getName().replace(".json", ""));
+        extractElements(rootNode, rootClassName, null);
     }
 
-    private void extractElements(JsonNode node, String parentName) {
-
+    private void extractElements(JsonNode node, String parentName, String grandParent) {
         if (node.isObject()) {
-            List<ElementInfo> fields = classMap.computeIfAbsent(parentName, k -> new ArrayList<>());
+            String key = generateUniqueKey(parentName, grandParent);
+            List<ElementInfo> fields = classMap.computeIfAbsent(key, k -> new ArrayList<>());
 
             node.fieldNames().forEachRemaining(fieldName -> {
                 JsonNode childNode = node.get(fieldName);
                 boolean isClass = childNode.isObject();
                 boolean isList = childNode.isArray();
                 String type = determineType(fieldName, childNode);
+                String className = toClassName(fieldName);
+                String childKey = generateUniqueKey(className, parentName);
 
                 if (isList && !childNode.isEmpty()) {
-                    extractElements(childNode.get(0), toClassName(fieldName));
+                    extractElements(childNode.get(0), className, parentName);
                 } else if (isClass) {
-                    extractElements(childNode, toClassName(fieldName));
+                    extractElements(childNode, className, parentName);
                 }
 
-                fields.add(new ElementInfo(fieldName, type, isClass, isList));
+                fields.add(new ElementInfo(fieldName, type, isClass, isList, parentName));
 
-                if (isList && !classMap.containsKey(toClassName(fieldName))) {
-                    classMap.put(toClassName(fieldName), new ArrayList<>());
+                if (isList && !classMap.containsKey(childKey)) {
+                    classMap.put(childKey, new ArrayList<>());
                 }
             });
-
         } else if (node.isArray() && !node.isEmpty()) {
-            extractElements(node.get(0), parentName);
+            extractElements(node.get(0), parentName, grandParent);
         }
+    }
+
+    private String generateUniqueKey(String className, String parentName) {
+        return (parentName == null) ? className : parentName + "_" + className;
     }
 
     private String determineType(String fieldName, JsonNode node) {
@@ -95,24 +103,26 @@ public class JsonToJava {
             writer.write("package com.generated;\n\n");
             writer.write("import java.util.List;\n");
             writer.write("import lombok.Getter;\nimport lombok.Setter;\n\n");
-
-            generateNestedClass(writer, "Root", 0);
+            String rootClassName = toClassName(fileName.replace(".json", ""));
+            generateNestedClass(writer, rootClassName, null, 0);
         }
     }
 
-    private void generateNestedClass(FileWriter writer, String className, int indentLevel) throws Exception {
+    private void generateNestedClass(FileWriter writer, String className, String parentName, int indentLevel) throws Exception {
+        String key = generateUniqueKey(className, parentName);
+        if (!classMap.containsKey(key)) return;
+
         String indent = "    ".repeat(indentLevel);
         writer.write(indent + "@Getter\n" + indent + "@Setter\n");
         writer.write(indent + "public static class " + className + " {\n");
 
-        for (ElementInfo field : classMap.getOrDefault(className, new ArrayList<>())) {
-            String fieldType = field.type;
-            writer.write(indent + "    private " + fieldType + " " + field.name + ";\n");
+        for (ElementInfo field : classMap.get(key)) {
+            writer.write(indent + "    private " + field.type + " " + field.name + ";\n");
         }
 
-        for (ElementInfo field : classMap.getOrDefault(className, new ArrayList<>())) {
+        for (ElementInfo field : classMap.get(key)) {
             if (field.isClass || field.isList) {
-                generateNestedClass(writer, toClassName(field.name), indentLevel + 1);
+                generateNestedClass(writer, toClassName(field.name), className, indentLevel + 1);
             }
         }
 
