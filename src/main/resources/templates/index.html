@@ -2,18 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Dosya Yükle</title>
-    <!-- Bootstrap CSS -->
+    <title>JsonXmlToJava</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #f8f9fa; /* Arka plan rengi */
+            background-color: #f8f9fa;
         }
         .container {
-            margin-top: 100px; /* Üstten boşluk */
+            margin-top: 100px;
         }
         .card {
-            border: none; /* Kart kenarlarını gizle */
+            border: none;
         }
     </style>
 </head>
@@ -23,10 +22,10 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h2 class="text-center">XSD-XML to JAXB Class Dönüştürücü</h2>
+                    <h2 class="text-center">XML or JSON to Java Class generation</h2>
                     <form action="/convert" method="post" enctype="multipart/form-data">
                         <div class="form-group">
-                            <label for="dosya">Dosya Yükleyin:</label>
+                            <label for="dosya">File / Files:</label>
                             <input type="file" id="dosya" name="dosya" class="form-control" multiple required />
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Yükle ve Dönüştür</button>
