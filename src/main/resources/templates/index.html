@@ -11,19 +11,40 @@
         .container {
             margin-top: 100px;
         }
-        .card {
-            border: none;
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
         }
     </style>
 </head>
 <body>
+
+
+<div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
+    <strong>Successful!</strong> File downloaded successfully
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+
+<div id="errorAlert" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+    <strong>Error!</strong> <span id="errorMessage"></span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h2 class="text-center">XML or JSON to Java Class generation</h2>
-                    <form action="/convert" method="post" enctype="multipart/form-data">
+                    <form id="uploadForm" action="/convert" method="post" enctype="multipart/form-data">
                         <div class="form-group">
                             <label for="dosya">File / Files:</label>
                             <input type="file" id="dosya" name="dosya" class="form-control" multiple required />
@@ -39,5 +60,44 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    document.querySelector("#uploadForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let formData = new FormData(this);
+        fetch("/convert", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("The file could not be processed.");
+            }
+            let fileName = response.headers.get("X-File-Name");
+            return response.blob().then(blob => ({ blob, fileName }));
+        })
+        .then(({ blob, fileName }) => {
+
+            let a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName || "converted.java";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            $("#successAlert").fadeIn();
+            setTimeout(() => $("#successAlert").fadeOut(), 5000);
+        })
+        .catch(error => {
+
+            $("#errorMessage").text(error.message);
+            $("#errorAlert").fadeIn();
+            setTimeout(() => $("#errorAlert").fadeOut(), 5000);
+        });
+    });
+</script>
+
+
 </body>
 </html>
