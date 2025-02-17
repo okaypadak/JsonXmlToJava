@@ -1,7 +1,10 @@
 package XmlToJAXB.controller;
 
+import XmlToJAXB.component.JsonToJava;
 import XmlToJAXB.component.XmlToJava;
 import XmlToJAXB.exception.XmlProcessingException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -24,6 +27,9 @@ public class ConverterController {
     @Autowired
     private XmlToJava xmlToJava;
 
+    @Autowired
+    private JsonToJava jsonToJava;
+
     @PostMapping("/convert")
     public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) {
         if (file.isEmpty()) {
@@ -32,15 +38,24 @@ public class ConverterController {
         }
 
         try {
-            // Dosyayı geçici bir yere kaydet
+
             File tempFile = new File(System.getProperty("java.io.tmpdir"), file.getOriginalFilename());
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
 
+            String fileExtension = getFileExtension(file.getOriginalFilename());
             String outputDir = System.getProperty("java.io.tmpdir");
-            xmlToJava.convert(tempFile, outputDir);
 
+
+            if (fileExtension.equalsIgnoreCase("xml")) {
+                xmlToJava.convert(tempFile, outputDir);
+            } else if (fileExtension.equalsIgnoreCase("json")) {
+                jsonToJava.convert(tempFile, outputDir);
+            } else {
+                model.addAttribute("errorMessage", "Desteklenmeyen dosya formatı.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
 
             String originalFileName = file.getOriginalFilename();
             String outputFileName = originalFileName.replace(".xml", ".java").replace(".json", ".java");
@@ -50,7 +65,6 @@ public class ConverterController {
                 model.addAttribute("errorMessage", "Dosya oluşturulamadı.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
-
 
             Resource resource = new FileSystemResource(outputFile);
             HttpHeaders headers = new HttpHeaders();
@@ -64,9 +78,24 @@ public class ConverterController {
         } catch (XmlProcessingException e) {
             model.addAttribute("errorMessage", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (IOException e) {
+        }
+        catch (JsonParseException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        catch (IOException e) {
             model.addAttribute("errorMessage", "Dosya işlenirken hata oluştu.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+    private String getFileExtension(String filename) {
+        int dotIndex = filename.lastIndexOf('.');
+        if (dotIndex == -1) {
+            return "";
+        }
+        return filename.substring(dotIndex + 1);
+    }
+
 }

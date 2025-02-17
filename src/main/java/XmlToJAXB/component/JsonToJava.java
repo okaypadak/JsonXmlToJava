@@ -1,5 +1,7 @@
 package XmlToJAXB.component;
 
+import XmlToJAXB.exception.XmlProcessingException;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -13,10 +15,15 @@ public class JsonToJava {
 
     private Map<String, List<ElementInfo>> classMap = new LinkedHashMap<>();
 
-    public void convert(File file, String fullOutputDir) throws Exception {
-        classMap.clear();
-        parseJson(file);
-        generateJavaClasses(fullOutputDir, file.getName());
+    public void convert(File file, String fullOutputDir) throws JsonParseException {
+        try {
+            classMap.clear();
+            parseJson(file);
+            generateJavaClasses(fullOutputDir, file.getName());
+        } catch (Exception e) {
+            throw new JsonParseException("Bu JSON sorunludur: " + e.getMessage());
+        }
+
     }
 
     private static class ElementInfo {
