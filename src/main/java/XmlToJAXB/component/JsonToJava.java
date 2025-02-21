@@ -1,14 +1,17 @@
 package XmlToJAXB.component;
 
-import XmlToJAXB.exception.XmlProcessingException;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.util.*;
 
 @Service
 public class JsonToJava {
@@ -23,7 +26,6 @@ public class JsonToJava {
         } catch (Exception e) {
             throw new JsonParseException("Bu JSON sorunludur: " + e.getMessage());
         }
-
     }
 
     private static class ElementInfo {
@@ -111,29 +113,28 @@ public class JsonToJava {
             writer.write("import java.util.List;\n");
             writer.write("import lombok.Getter;\nimport lombok.Setter;\n\n");
             String rootClassName = toClassName(fileName.replace(".json", ""));
-            generateNestedClass(writer, rootClassName, null, 0);
+            generateNestedClass(writer, rootClassName, null);
         }
     }
 
-    private void generateNestedClass(FileWriter writer, String className, String parentName, int indentLevel) throws Exception {
+    private void generateNestedClass(FileWriter writer, String className, String parentName) throws Exception {
         String key = generateUniqueKey(className, parentName);
         if (!classMap.containsKey(key)) return;
 
-        String indent = "    ".repeat(indentLevel);
-        writer.write(indent + "@Getter\n" + indent + "@Setter\n");
-        writer.write(indent + "public static class " + className + " {\n");
+        writer.write("@Getter\n@Setter\n");
+        writer.write("public static class " + className + " {\n");
 
         for (ElementInfo field : classMap.get(key)) {
-            writer.write(indent + "    private " + field.type + " " + field.name + ";\n");
+            writer.write("    private " + field.type + " " + field.name + ";\n");
         }
 
         for (ElementInfo field : classMap.get(key)) {
             if (field.isClass || field.isList) {
-                generateNestedClass(writer, toClassName(field.name), className, indentLevel + 1);
+                generateNestedClass(writer, toClassName(field.name), className);
             }
         }
 
-        writer.write(indent + "}\n\n");
+        writer.write("}\n\n");
     }
 
     private static String toClassName(String name) {

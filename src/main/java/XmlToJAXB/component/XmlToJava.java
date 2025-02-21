@@ -1,20 +1,26 @@
 package XmlToJAXB.component;
 
-import XmlToJAXB.exception.XmlProcessingException;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.io.FileWriter;
-import java.util.*;
-import java.util.stream.Collectors;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import XmlToJAXB.exception.XmlProcessingException;
 
 @Service
 public class XmlToJava {
@@ -35,6 +41,7 @@ public class XmlToJava {
     }
 
     private class ElementInfo {
+
         int id;
         String name;
         String namespace;
@@ -58,6 +65,7 @@ public class XmlToJava {
     }
 
     private class AttributeInfo {
+
         String name;
         String type;
 
@@ -66,7 +74,6 @@ public class XmlToJava {
             this.type = type;
         }
     }
-
 
     private void parseXML(File file) throws Exception {
 
@@ -133,7 +140,6 @@ public class XmlToJava {
         isList = elementCount.getOrDefault(elementKey, 0) > 1;
         ElementInfo elementInfo = new ElementInfo(idCounter++, localName, namespaceURI, parent, isClass, isRoot, type, isList);
 
-
         NamedNodeMap attributes = element.getAttributes();
 
         for (int i = 0; i < attributes.getLength(); i++) {
@@ -147,7 +153,7 @@ public class XmlToJava {
                 attrType = "BigDecimal";
             }
 
-            if(!attrName.contains("xmlns")) {
+            if (!attrName.contains("xmlns")) {
                 elementInfo.attributes.add(new AttributeInfo(attrName, attrType));
             }
 
@@ -164,7 +170,7 @@ public class XmlToJava {
     }
 
     private void generateJAXBClass(String outputPath, String name) throws Exception {
-        File file = new File(outputPath, name.replace(".xml",".java"));
+        File file = new File(outputPath, name.replace(".xml", ".java"));
 
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("package com.generated;\n\n");
@@ -182,7 +188,9 @@ public class XmlToJava {
 
     private void generateClass(String name, FileWriter writer, String parent, Map<String, List<ElementInfo>> classMap, boolean isFirstClass) throws Exception {
 
-        if (!classMap.containsKey(parent)) return;
+        if (!classMap.containsKey(parent)) {
+            return;
+        }
 
         for (ElementInfo element : classMap.get(parent)) {
             if (element.isClass) {
@@ -197,8 +205,7 @@ public class XmlToJava {
                 writer.write("@XmlAccessorType(XmlAccessType.FIELD)\n");
                 writer.write("@Getter\n@Setter\n");
 
-                writer.write((isFirstClass ? "public " : "public static ") + "class " + (isFirstClass ? toClassName(name.replace(".xml","")) : toClassName(element.name)) + " {\n");
-
+                writer.write((isFirstClass ? "public " : "public static ") + "class " + (isFirstClass ? toClassName(name.replace(".xml", "")) : toClassName(element.name)) + " {\n");
 
                 for (AttributeInfo attr : element.attributes) {
                     writer.write("    @XmlAttribute(name=\"" + attr.name + "\")\n");
@@ -232,9 +239,9 @@ public class XmlToJava {
             return true;
         }
 
-        if (element.getChildNodes().getLength() == 1 &&
-                element.getFirstChild().getNodeType() == Node.TEXT_NODE &&
-                element.getTextContent().trim().isEmpty()) {
+        if (element.getChildNodes().getLength() == 1
+                && element.getFirstChild().getNodeType() == Node.TEXT_NODE
+                && element.getTextContent().trim().isEmpty()) {
             return true;
         }
 

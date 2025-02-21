@@ -1,10 +1,9 @@
 package XmlToJAXB.controller;
 
-import XmlToJAXB.component.JsonToJava;
-import XmlToJAXB.component.XmlToJava;
-import XmlToJAXB.exception.XmlProcessingException;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.io.JsonEOFException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -16,10 +15,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.google.googlejavaformat.java.FormatterException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import XmlToJAXB.component.JavaFormatService;
+import XmlToJAXB.component.JsonToJava;
+import XmlToJAXB.component.XmlToJava;
+import XmlToJAXB.exception.XmlProcessingException;
 
 @Controller
 public class ConverterController {
@@ -30,8 +32,11 @@ public class ConverterController {
     @Autowired
     private JsonToJava jsonToJava;
 
+    @Autowired
+    private JavaFormatService javaFormatService;
+
     @PostMapping("/convert")
-    public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) {
+    public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) throws FormatterException {
         if (file.isEmpty()) {
             model.addAttribute("errorMessage", "Lütfen bir dosya yükleyin.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -56,6 +61,9 @@ public class ConverterController {
                 model.addAttribute("errorMessage", "Desteklenmeyen dosya formatı.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
+
+            javaFormatService.formatAndSaveJavaFile(outputDir, tempFile.getName());
+
 
             String originalFileName = file.getOriginalFilename();
             String outputFileName = originalFileName.replace(".xml", ".java").replace(".json", ".java");
