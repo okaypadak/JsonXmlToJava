@@ -12,6 +12,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 
 @Service
 public class XmlToJava {
@@ -40,6 +43,7 @@ public class XmlToJava {
         boolean isRoot;
         String type;
         boolean isList;
+        List<AttributeInfo> attributes = new ArrayList<>();
 
         ElementInfo(int id, String name, String namespace, String parent, boolean isClass, boolean isRoot, String type, boolean isList) {
             this.id = id;
@@ -53,6 +57,17 @@ public class XmlToJava {
         }
     }
 
+    private class AttributeInfo {
+        String name;
+        String type;
+
+        AttributeInfo(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+    }
+
+
     private void parseXML(File file) throws Exception {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -63,6 +78,10 @@ public class XmlToJava {
     }
 
     private void extractElements(Element element, String parent, boolean isRoot) {
+
+        if (isEmptyElement(element) || hasOnlyEmptyChildren(element)) {
+            return;
+        }
 
         String namespaceURI = element.getNamespaceURI();
         String localName = element.getLocalName();
@@ -83,15 +102,14 @@ public class XmlToJava {
         processedElements.add(elementKey);
 
         NodeList children = element.getChildNodes();
-
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
             if (node instanceof Element) {
                 String childName = node.getLocalName();
                 String childKey;
 
-                if(localName.equals(childName)) {
-                    childKey = localName + ":" + childName+"Sub";
+                if (localName.equals(childName)) {
+                    childKey = localName + ":" + childName + "Sub";
                 } else {
                     childKey = localName + ":" + childName;
                 }
@@ -113,7 +131,29 @@ public class XmlToJava {
         }
 
         isList = elementCount.getOrDefault(elementKey, 0) > 1;
-        elementList.add(new ElementInfo(idCounter++, localName, namespaceURI, parent, isClass, isRoot, type, isList));
+        ElementInfo elementInfo = new ElementInfo(idCounter++, localName, namespaceURI, parent, isClass, isRoot, type, isList);
+
+
+        NamedNodeMap attributes = element.getAttributes();
+
+        for (int i = 0; i < attributes.getLength(); i++) {
+            Node attr = attributes.item(i);
+            String attrName = attr.getNodeName();
+            String attrType = "String";
+
+            if (attr.getNodeValue().matches("\\d+")) {
+                attrType = "Integer";
+            } else if (attr.getNodeValue().matches("\\d+\\.\\d+")) {
+                attrType = "BigDecimal";
+            }
+
+            if(!attrName.contains("xmlns")) {
+                elementInfo.attributes.add(new AttributeInfo(attrName, attrType));
+            }
+
+        }
+
+        elementList.add(elementInfo);
 
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
@@ -159,6 +199,12 @@ public class XmlToJava {
 
                 writer.write((isFirstClass ? "public " : "public static ") + "class " + (isFirstClass ? toClassName(name.replace(".xml","")) : toClassName(element.name)) + " {\n");
 
+
+                for (AttributeInfo attr : element.attributes) {
+                    writer.write("    @XmlAttribute(name=\"" + attr.name + "\")\n");
+                    writer.write("    private " + attr.type + " " + attr.name + ";\n");
+                }
+
                 for (ElementInfo child : classMap.getOrDefault(element.name, new ArrayList<>())) {
                     writer.write("    @XmlElement(name=\"" + child.name + "\"" + (child.namespace != null ? ", namespace=\"" + child.namespace + "\"" : "") + ")\n");
                     writer.write("    private " + (child.isList ? "List<" + toClassName(child.name) + ">" : (child.isClass ? toClassName(child.name) : child.type)) + " " + child.name + "" + (child.isList ? " = new ArrayList<>()" : "") + ";\n");
@@ -178,6 +224,41 @@ public class XmlToJava {
 
     private static String toClassName(String name) {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    private boolean isEmptyElement(Element element) {
+
+        if (element.getChildNodes().getLength() == 0) {
+            return true;
+        }
+
+        if (element.getChildNodes().getLength() == 1 &&
+                element.getFirstChild().getNodeType() == Node.TEXT_NODE &&
+                element.getTextContent().trim().isEmpty()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean hasOnlyEmptyChildren(Element element) {
+
+        NodeList children = element.getChildNodes();
+
+        boolean hasChildElements = false;
+        boolean allChildrenEmpty = true;
+
+        for (int i = 0; i < children.getLength(); i++) {
+            Node node = children.item(i);
+            if (node instanceof Element) {
+                hasChildElements = true;
+                if (!isEmptyElement((Element) node)) {
+                    allChildrenEmpty = false;
+                }
+            }
+        }
+
+        return hasChildElements && allChildrenEmpty;
     }
 
     private void resetState() {
