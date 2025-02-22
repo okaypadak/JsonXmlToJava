@@ -7,6 +7,12 @@
     <style>
         body {
             background-color: #f8f9fa;
+            color: #000;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-mode {
+            background-color: #343a40;
+            color: #fff;
         }
         .container {
             margin-top: 100px;
@@ -18,86 +24,121 @@
             z-index: 1000;
             display: none;
         }
+        .toggle-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 25px;
+            background-color: #ccc;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            transition: background-color 0.3s;
+        }
+        .toggle-circle {
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .dark-mode .toggle-container {
+            background-color: #222;
+        }
+        .dark-mode .toggle-circle {
+            transform: translateX(25px);
+        }
+        .card {
+            background-color: #f0f0f0;
+        }
+        .dark-mode .card {
+            background-color: #555;
+        }
+        .dark-mode h2 {
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <div class="toggle-container" id="themeToggle">
+        <div class="toggle-circle"></div>
+    </div>
 
+    <div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
+        <strong>Successful!</strong> File downloaded successfully
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
 
-<div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
-    <strong>Successful!</strong> File downloaded successfully
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
+    <div id="errorAlert" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+        <strong>Error!</strong> <span id="errorMessage"></span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
 
-
-<div id="errorAlert" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
-    <strong>Error!</strong> <span id="errorMessage"></span>
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="text-center">XML or JSON to Java Class generation</h2>
-                    <form id="uploadForm" action="/convert" method="post" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="dosya">File / Files:</label>
-                            <input type="file" id="dosya" name="dosya" class="form-control" multiple required />
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Upload and Generate</button>
-                    </form>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="text-center">XML or JSON to Java Class generation</h2>
+                        <form id="uploadForm" action="/convert" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="dosya">File / Files:</label>
+                                <input type="file" id="dosya" name="dosya" class="form-control" multiple required />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Upload and Generate</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.querySelector("#uploadForm").addEventListener("submit", function(event) {
+            event.preventDefault();
 
-<script>
-    document.querySelector("#uploadForm").addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        let formData = new FormData(this);
-        fetch("/convert", {
-            method: "POST",
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("The file could not be processed.");
-            }
-            let fileName = response.headers.get("X-File-Name");
-            return response.blob().then(blob => ({ blob, fileName }));
-        })
-        .then(({ blob, fileName }) => {
-
-            let a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = fileName || "converted.java";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            $("#successAlert").fadeIn();
-            setTimeout(() => $("#successAlert").fadeOut(), 5000);
-        })
-        .catch(error => {
-
-            $("#errorMessage").text(error.message);
-            $("#errorAlert").fadeIn();
-            setTimeout(() => $("#errorAlert").fadeOut(), 5000);
+            let formData = new FormData(this);
+            fetch("/convert", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("The file could not be processed.");
+                }
+                let fileName = response.headers.get("X-File-Name");
+                return response.blob().then(blob => ({ blob, fileName }));
+            })
+            .then(({ blob, fileName }) => {
+                let a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = fileName || "converted.java";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                $("#successAlert").fadeIn();
+                setTimeout(() => $("#successAlert").fadeOut(), 5000);
+            })
+            .catch(error => {
+                $("#errorMessage").text(error.message);
+                $("#errorAlert").fadeIn();
+                setTimeout(() => $("#errorAlert").fadeOut(), 5000);
+            });
         });
-    });
-</script>
 
-
+        document.querySelector("#themeToggle").addEventListener("click", function() {
+            document.body.classList.toggle("dark-mode");
+        });
+    </script>
 </body>
 </html>
