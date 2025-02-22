@@ -28,7 +28,7 @@ public class JavaFormatService {
     }
 
 
-    public void formatAndSaveJavaFile(String outputPath, String fileName) throws IOException {
+    public void formatAndSaveJavaFile(String fileName, String outputPath) throws IOException {
 
         File file = new File(outputPath, fileName.replaceAll("\\.(json|xml)$", ".java"));
 

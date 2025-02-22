@@ -44,15 +44,14 @@ public class ConverterController {
                 fos.write(file.getBytes());
             }
     
-            String outputDir = System.getProperty("java.io.tmpdir");
+            String outputDir = System.getProperty("user.home") + "/tempfiles";
     
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
     
-            javaFormatService.formatAndSaveJavaFile(outputDir, tempFile.getName());
+            javaFormatService.formatAndSaveJavaFile(tempFile.getName(), outputDir);
     
             String originalFileName = file.getOriginalFilename();
-            //String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
-            String outputFileName = originalFileName.replace(".xml", ".java").replace(".json", ".java");
+            String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
     
             if (!outputFile.exists()) {
