@@ -51,7 +51,8 @@ public class ConverterController {
             javaFormatService.formatAndSaveJavaFile(outputDir, tempFile.getName());
     
             String originalFileName = file.getOriginalFilename();
-            String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
+            //String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
+            String outputFileName = originalFileName.replace(".xml", ".java").replace(".json", ".java");
             File outputFile = new File(outputDir, outputFileName);
     
             if (!outputFile.exists()) {
