@@ -11,3 +11,8 @@ spring:
       max-request-size: 10MB
 
 local-path:  ${LOCAL_PATH:/tmp}
+
+logging:
+  level:
+    root: DEBUG
+    org.springframework: DEBUG
