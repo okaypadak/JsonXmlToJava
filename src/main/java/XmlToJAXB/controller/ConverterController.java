@@ -50,27 +50,26 @@ public class ConverterController {
             File outputDirectory = new File(outputDir);
             if (!outputDirectory.exists()) {
                 outputDirectory.mkdirs();
-                System.out.println("Output directory created: " + outputDir);
             } else {
-                System.out.println("Output directory already exists: " + outputDir);
+                //TODO
             }
 
     
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
     
-            javaFormatService.formatAndSaveJavaFile(tempFile.getName(), outputDir);
+            //javaFormatService.formatAndSaveJavaFile(tempFile.getName(), outputDir);
     
             String originalFileName = file.getOriginalFilename();
             String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
     
             if (!outputFile.exists()) {
-                System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
+                //System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
                 model.addAttribute("errorMessage", "Dosya oluşturulamadı.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
     
-            System.out.println("Output file successfully created: " + outputFile.getAbsolutePath());
+            //System.out.println("Output file successfully created: " + outputFile.getAbsolutePath());
     
             Resource resource = new FileSystemResource(outputFile);
             HttpHeaders headers = new HttpHeaders();
@@ -80,17 +79,17 @@ public class ConverterController {
             return ResponseEntity.ok().headers(headers).body(resource);
     
         } catch (ProcessingException e) {
-            System.err.println("ProcessingException occurred: " + e.getMessage());
+            //System.err.println("ProcessingException occurred: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("errorMessage", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (IOException e) {
-            System.err.println("IOException occurred: " + e.getMessage());
+            //System.err.println("IOException occurred: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("errorMessage", "Dosya işlenirken hata oluştu.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {  // Bu, yakalanmayan tüm hataları kapsar
-            System.err.println("Unexpected Exception: " + e.getMessage());
+            //System.err.println("Unexpected Exception: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("errorMessage", "Bilinmeyen bir hata oluştu.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
