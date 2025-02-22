@@ -44,12 +44,17 @@ public class ConverterController {
                 fos.write(file.getBytes());
             }
     
-            String outputDir = System.getProperty("user.home") + "/tempfiles";
-            File outputDirectory = new File(outputDir);
 
+            String outputDir = "/app/tempfiles";
+
+            File outputDirectory = new File(outputDir);
             if (!outputDirectory.exists()) {
                 outputDirectory.mkdirs();
+                System.out.println("Output directory created: " + outputDir);
+            } else {
+                System.out.println("Output directory already exists: " + outputDir);
             }
+
     
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
     
