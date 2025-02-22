@@ -11,14 +11,10 @@ import java.util.Map;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.text.edits.TextEdit;
 import org.eclipse.jface.text.Document;
+import org.eclipse.text.edits.TextEdit;
 import org.springframework.stereotype.Service;
 
-/**
- * Service class for formatting and saving Java source code files.
- * Uses Eclipse JDT CodeFormatter to format Java files.
- */
 @Service
 public class JavaFormatService {
 

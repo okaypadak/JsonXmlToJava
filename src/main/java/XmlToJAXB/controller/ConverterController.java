@@ -15,28 +15,22 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.google.googlejavaformat.java.FormatterException;
 
 import XmlToJAXB.component.JavaFormatService;
-import XmlToJAXB.component.JsonToJava;
-import XmlToJAXB.component.XmlToJava;
-import XmlToJAXB.exception.XmlProcessingException;
+import XmlToJAXB.exception.ProcessingException;
+import XmlToJAXB.service.Handler;
 
 @Controller
 public class ConverterController {
 
     @Autowired
-    private XmlToJava xmlToJava;
-
-    @Autowired
-    private JsonToJava jsonToJava;
+    Handler handler;
 
     @Autowired
     private JavaFormatService javaFormatService;
 
     @PostMapping("/convert")
-    public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) throws FormatterException {
+    public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) {
         if (file.isEmpty()) {
             model.addAttribute("errorMessage", "Lütfen bir dosya yükleyin.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -49,24 +43,14 @@ public class ConverterController {
                 fos.write(file.getBytes());
             }
 
-            String fileExtension = getFileExtension(file.getOriginalFilename());
             String outputDir = System.getProperty("java.io.tmpdir");
 
-
-            if (fileExtension.equalsIgnoreCase("xml")) {
-                xmlToJava.convert(tempFile, outputDir);
-            } else if (fileExtension.equalsIgnoreCase("json")) {
-                jsonToJava.convert(tempFile, outputDir);
-            } else {
-                model.addAttribute("errorMessage", "Desteklenmeyen dosya formatı.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
+            handler.get(tempFile.getName()).convert(tempFile, outputDir);
 
             javaFormatService.formatAndSaveJavaFile(outputDir, tempFile.getName());
 
-
             String originalFileName = file.getOriginalFilename();
-            String outputFileName = originalFileName.replace(".xml", ".java").replace(".json", ".java");
+            String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
 
             if (!outputFile.exists()) {
@@ -83,11 +67,7 @@ public class ConverterController {
                     .headers(headers)
                     .body(resource);
 
-        } catch (XmlProcessingException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        catch (JsonParseException e) {
+        } catch (ProcessingException e) {
             model.addAttribute("errorMessage", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -97,13 +77,8 @@ public class ConverterController {
         }
     }
 
-
-    private String getFileExtension(String filename) {
-        int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex == -1) {
-            return "";
-        }
-        return filename.substring(dotIndex + 1);
+    private static String toClassName(String name) {
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
 }

@@ -20,23 +20,25 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import XmlToJAXB.exception.XmlProcessingException;
+import XmlToJAXB.exception.ProcessingException;
+import XmlToJAXB.service.IConverter;
 
 @Service
-public class XmlToJava {
+public class XmlGenerate implements IConverter {
 
     private List<ElementInfo> elementList = new ArrayList<>();
     private int idCounter = 1;
     private Set<String> processedElements = new HashSet<>();
     private Map<String, Integer> elementCount = new HashMap<>();
 
-    public void convert(File xmlFile, String fullOutputDir) throws XmlProcessingException {
+    @Override
+    public void convert(File xmlFile, String fullOutputDir) throws ProcessingException {
         try {
             resetState();
             parseXML(xmlFile);
             generateJAXBClass(fullOutputDir, xmlFile.getName());
         } catch (Exception e) {
-            throw new XmlProcessingException("Bu XML sorunludur: " + e.getMessage());
+            throw new ProcessingException("Bu XML sorunludur: " + e.getMessage());
         }
     }
 
@@ -170,7 +172,7 @@ public class XmlToJava {
     }
 
     private void generateJAXBClass(String outputPath, String name) throws Exception {
-        File file = new File(outputPath, name.replace(".xml", ".java"));
+        File file = new File(outputPath, toClassName(name.replace(".xml", ".java")));
 
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("package com.generated;\n\n");

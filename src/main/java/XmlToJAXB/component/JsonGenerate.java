@@ -9,22 +9,25 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import XmlToJAXB.exception.ProcessingException;
+import XmlToJAXB.service.IConverter;
+
 @Service
-public class JsonToJava {
+public class JsonGenerate implements IConverter {
 
     private Map<String, List<ElementInfo>> classMap = new LinkedHashMap<>();
 
-    public void convert(File file, String fullOutputDir) throws JsonParseException {
+    @Override
+    public void convert(File file, String fullOutputDir) throws ProcessingException {
         try {
             classMap.clear();
             parseJson(file);
             generateJavaClasses(fullOutputDir, file.getName());
         } catch (Exception e) {
-            throw new JsonParseException("Bu JSON sorunludur: " + e.getMessage());
+            throw new ProcessingException("Bu JSON sorunludur: " + e.getMessage());
         }
     }
 
@@ -113,16 +116,16 @@ public class JsonToJava {
             writer.write("import java.util.List;\n");
             writer.write("import lombok.Getter;\nimport lombok.Setter;\n\n");
             String rootClassName = toClassName(fileName.replace(".json", ""));
-            generateNestedClass(writer, rootClassName, null);
+            generateNestedClass(writer, rootClassName, null, true);
         }
     }
 
-    private void generateNestedClass(FileWriter writer, String className, String parentName) throws Exception {
+    private void generateNestedClass(FileWriter writer, String className, String parentName, boolean isFirstClass) throws Exception {
         String key = generateUniqueKey(className, parentName);
         if (!classMap.containsKey(key)) return;
 
         writer.write("@Getter\n@Setter\n");
-        writer.write("public static class " + className + " {\n");
+        writer.write((isFirstClass ? "public " : "public static ") + "class " + className + " {\n");
 
         for (ElementInfo field : classMap.get(key)) {
             writer.write("    private " + field.type + " " + field.name + ";\n");
@@ -130,7 +133,7 @@ public class JsonToJava {
 
         for (ElementInfo field : classMap.get(key)) {
             if (field.isClass || field.isList) {
-                generateNestedClass(writer, toClassName(field.name), className);
+                generateNestedClass(writer, toClassName(field.name), className, false);
             }
         }
 

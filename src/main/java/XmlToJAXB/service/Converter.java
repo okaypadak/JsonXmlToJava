@@ -1,8 +1,12 @@
 package XmlToJAXB.service;
 
-import XmlToJAXB.component.JsonToJava;
-import XmlToJAXB.component.XmlToJava;
-import XmlToJAXB.component.Zip;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -12,24 +16,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Objects;
+import XmlToJAXB.component.JsonGenerate;
+import XmlToJAXB.component.XmlGenerate;
+import XmlToJAXB.component.Zip;
 
 @Service
 public class Converter {
 
     @Autowired
-    private XmlToJava xmlToJava;
+    private XmlGenerate xml;
 
     @Autowired
-    private JsonToJava jsonToJava;
+    private JsonGenerate json;
 
     @Autowired
     private Zip zip;
+
+    @Autowired
+    Handler handler;
 
 
     @Value("${local-path}")
@@ -77,13 +81,7 @@ public class Converter {
 
         String fileName = file.getOriginalFilename().toLowerCase();
 
-        if (fileName.endsWith(".xml")) {
-            xmlToJava.convert(tempFile, fullOutputDir);
-        } else if (fileName.endsWith(".json")) {
-            jsonToJava.convert(tempFile, fullOutputDir);
-        } else {
-            throw new IllegalArgumentException("Unsupported file type: " + fileName);
-        }
+        handler.get(fileName).convert(tempFile, fullOutputDir);
     }
 
 
