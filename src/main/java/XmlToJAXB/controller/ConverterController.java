@@ -31,52 +31,62 @@ public class ConverterController {
 
     @PostMapping("/convert")
     public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) {
+        System.out.println("POST request received for file: " + file.getOriginalFilename());
+    
         if (file.isEmpty()) {
             model.addAttribute("errorMessage", "Lütfen bir dosya yükleyin.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-
+    
         try {
-
             File tempFile = new File(System.getProperty("java.io.tmpdir"), file.getOriginalFilename());
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
-
+    
             String outputDir = System.getProperty("java.io.tmpdir");
-
+    
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
-
+    
             javaFormatService.formatAndSaveJavaFile(outputDir, tempFile.getName());
-
+    
             String originalFileName = file.getOriginalFilename();
             String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
-
+    
             if (!outputFile.exists()) {
+                System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
                 model.addAttribute("errorMessage", "Dosya oluşturulamadı.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
-
+    
+            System.out.println("Output file successfully created: " + outputFile.getAbsolutePath());
+    
             Resource resource = new FileSystemResource(outputFile);
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + outputFileName);
             headers.add("X-File-Name", outputFileName);
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(resource);
-
+    
+            return ResponseEntity.ok().headers(headers).body(resource);
+    
         } catch (ProcessingException e) {
+            System.err.println("ProcessingException occurred: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("errorMessage", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
+            System.err.println("IOException occurred: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("errorMessage", "Dosya işlenirken hata oluştu.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {  // Bu, yakalanmayan tüm hataları kapsar
+            System.err.println("Unexpected Exception: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("errorMessage", "Bilinmeyen bir hata oluştu.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
+    
     private static String toClassName(String name) {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
