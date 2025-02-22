@@ -45,6 +45,11 @@ public class ConverterController {
             }
     
             String outputDir = System.getProperty("user.home") + "/tempfiles";
+            File outputDirectory = new File(outputDir);
+
+            if (!outputDirectory.exists()) {
+                outputDirectory.mkdirs();
+            }
     
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
     
