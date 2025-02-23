@@ -18,19 +18,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class JavaFormatService {
 
-    // CodeFormatter instance for formatting Java source code
+  
     private final CodeFormatter formatter;
 
 
     public JavaFormatService() {
-        // Create a CodeFormatter with default formatting settings
         this.formatter = ToolFactory.createCodeFormatter(Map.of());
     }
 
-
     public void formatAndSaveJavaFile(String fileName, String outputPath) throws IOException {
 
-        File file = new File(outputPath, fileName.replaceAll("\\.(json|xml)$", ".java"));
+        File file = new File(outputPath, fileName);
 
         if (!file.exists() || !file.isFile()) {
             throw new IOException("File not found or is not a valid file: " + file.getAbsolutePath());

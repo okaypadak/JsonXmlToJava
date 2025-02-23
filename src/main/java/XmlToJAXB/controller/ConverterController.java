@@ -54,14 +54,12 @@ public class ConverterController {
                 //TODO
             }
 
-    
-            handler.get(tempFile.getName()).convert(tempFile, outputDir);
-    
-            //javaFormatService.formatAndSaveJavaFile(tempFile.getName(), outputDir);
-    
             String originalFileName = file.getOriginalFilename();
             String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
+
+            handler.get(tempFile.getName()).convert(tempFile, outputDir);
+            javaFormatService.formatAndSaveJavaFile(outputFileName, outputDir);
     
             if (!outputFile.exists()) {
                 //System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
