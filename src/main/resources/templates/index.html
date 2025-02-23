@@ -60,6 +60,11 @@
         .dark-mode h2 {
             color: white;
         }
+        textarea {
+            width: 100%;
+            height: 200px;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
@@ -94,6 +99,10 @@
                             </div>
                             <button type="submit" class="btn btn-primary btn-block">Upload and Generate</button>
                         </form>
+                        <hr>
+                        <h4 class="text-center">Or Paste Your JSON/XML Below</h4>
+                        <textarea id="textContent" class="form-control" placeholder="Paste your JSON or XML here..."></textarea>
+                        <button id="generateFromText" class="btn btn-success btn-block mt-3">Generate from Text</button>
                     </div>
                 </div>
             </div>
@@ -106,8 +115,11 @@
     <script>
         document.querySelector("#uploadForm").addEventListener("submit", function(event) {
             event.preventDefault();
-
             let formData = new FormData(this);
+            sendRequest(formData);
+        });
+
+        function sendRequest(formData) {
             fetch("/convert", {
                 method: "POST",
                 body: formData
@@ -134,10 +146,43 @@
                 $("#errorAlert").fadeIn();
                 setTimeout(() => $("#errorAlert").fadeOut(), 5000);
             });
-        });
+        }
 
         document.querySelector("#themeToggle").addEventListener("click", function() {
             document.body.classList.toggle("dark-mode");
+        });
+
+        function detectFormat(text) {
+            try {
+                JSON.parse(text);
+                return "json";
+            } catch (e) {}
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, "application/xml");
+            if (xmlDoc.getElementsByTagName("parsererror").length === 0) {
+                return "xml";
+            }
+
+            return null;
+        }
+
+        document.querySelector("#generateFromText").addEventListener("click", function() {
+            let textContent = document.querySelector("#textContent").value.trim();
+            let format = detectFormat(textContent);
+            
+            if (!format) {
+                $("#errorMessage").text("Invalid input. Please provide valid JSON or XML.");
+                $("#errorAlert").fadeIn();
+                setTimeout(() => $("#errorAlert").fadeOut(), 5000);
+                return;
+            }
+            
+            let blob = new Blob([textContent], { type: format === "json" ? "application/json" : "application/xml" });
+            let formData = new FormData();
+            formData.append("dosya", blob, `input.${format}`);
+            
+            sendRequest(formData);
         });
     </script>
 </body>

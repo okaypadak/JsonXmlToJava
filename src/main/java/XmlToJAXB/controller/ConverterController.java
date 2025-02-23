@@ -31,7 +31,7 @@ public class ConverterController {
 
     @PostMapping("/convert")
     public ResponseEntity<Resource> convertFile(@RequestParam("dosya") MultipartFile file, Model model) {
-        System.out.println("POST request received for file: " + file.getOriginalFilename());
+        //System.out.println("POST request received for file: " + file.getOriginalFilename());
     
         if (file.isEmpty()) {
             model.addAttribute("errorMessage", "Lütfen bir dosya yükleyin.");
@@ -40,6 +40,7 @@ public class ConverterController {
     
         try {
             File tempFile = new File(System.getProperty("java.io.tmpdir"), file.getOriginalFilename());
+            
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
@@ -62,7 +63,7 @@ public class ConverterController {
             javaFormatService.formatAndSaveJavaFile(outputFileName, outputDir);
     
             if (!outputFile.exists()) {
-                //System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
+                //System.err.printl                     n("ERROR: Output file not created: " + outputFile.getAbsolutePath());
                 model.addAttribute("errorMessage", "Dosya oluşturulamadı.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
