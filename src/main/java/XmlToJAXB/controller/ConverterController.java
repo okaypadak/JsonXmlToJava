@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import XmlToJAXB.component.JavaFormatService;
+import XmlToJAXB.component.WsdlGenerate;
 import XmlToJAXB.exception.ProcessingException;
 import XmlToJAXB.service.Handler;
 
@@ -25,6 +26,10 @@ public class ConverterController {
 
     @Autowired
     Handler handler;
+
+    
+    @Autowired
+    WsdlGenerate wsdlGenerate;
 
     @Autowired
     private JavaFormatService javaFormatService;
@@ -44,7 +49,8 @@ public class ConverterController {
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
-    
+
+        
 
             String outputDir = "/app/tempfiles";
 
@@ -59,11 +65,18 @@ public class ConverterController {
             String outputFileName = toClassName(originalFileName.replace(".xml", ".java").replace(".json", ".java"));
             File outputFile = new File(outputDir, outputFileName);
 
+            if (originalFileName.toLowerCase().endsWith(".wsdl")) {
+                wsdlGenerate.extractOperations(tempFile);
+                wsdlGenerate.generateXmlFromXsd(tempFile);
+                return null;
+            }
+    
+
             handler.get(tempFile.getName()).convert(tempFile, outputDir);
             javaFormatService.formatAndSaveJavaFile(outputFileName, outputDir);
     
             if (!outputFile.exists()) {
-                //System.err.printl                     n("ERROR: Output file not created: " + outputFile.getAbsolutePath());
+                //System.err.println("ERROR: Output file not created: " + outputFile.getAbsolutePath());
                 model.addAttribute("errorMessage", "Dosya oluşturulamadı.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
