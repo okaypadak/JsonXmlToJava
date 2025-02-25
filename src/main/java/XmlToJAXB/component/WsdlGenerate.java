@@ -19,8 +19,42 @@ import org.w3c.dom.NodeList;
 @Component
 public class WsdlGenerate {
 
-    public List<String[]> extractOperations(File wsdlFile) {
-        List<String[]> operationData = new ArrayList<>();
+
+
+    public List<OperationWithXml> convert(File wsdlFile) {
+
+        List<OperationWithXml> operationXmlList = new ArrayList<>();
+        List<OperationData> operations = extractOperations(wsdlFile);
+        List<MessageData> messages = extractMessages(wsdlFile);
+        List<XsdData> xsdData = generateXmlFromXsd(wsdlFile);
+
+        for (OperationData operation : operations) {
+            String inputMessage = removeNamespace(operation.getInputMessage());
+            String outputMessage = removeNamespace(operation.getOutputMessage());
+            String requestXml = findXmlByMessage(inputMessage, messages, xsdData);
+            String responseXml = findXmlByMessage(outputMessage, messages, xsdData);
+            operationXmlList.add(new OperationWithXml(operation.getMethodName(), requestXml, responseXml));
+        }
+        return operationXmlList;
+    }
+
+    private String findXmlByMessage(String messageName, List<MessageData> messages, List<XsdData> xsdData) {
+        for (MessageData message : messages) {
+            if (message.getMessageName().contains(messageName)) {
+                for (XsdData xsd : xsdData) {
+                    String MessageName = removeNamespace(message.getElementName());
+                    if (xsd.getElementName().equals(MessageName)) {
+                        return xsd.getXmlContent();
+                    }
+                }
+            }
+        }
+        return "<error>XML not found</error>";
+    }
+
+
+    public List<OperationData> extractOperations(File wsdlFile) {
+        List<OperationData> operationDataList = new ArrayList<>();
         try {
             Document doc = parseXml(wsdlFile);
             NodeList operationNodes = evaluateXPath(doc, "//*[local-name()='portType']/*[local-name()='operation']");
@@ -29,51 +63,67 @@ public class WsdlGenerate {
                 String methodName = operation.getAttributes().getNamedItem("name").getNodeValue();
                 Node inputNode = evaluateXPath(operation, "*[local-name()='input']").item(0);
                 Node outputNode = evaluateXPath(operation, "*[local-name()='output']").item(0);
-                String inputMessage = (inputNode != null && inputNode.getAttributes().getNamedItem("message") != null)
-                        ? inputNode.getAttributes().getNamedItem("message").getNodeValue() : "N/A";
-                String outputMessage = (outputNode != null && outputNode.getAttributes().getNamedItem("message") != null)
-                        ? outputNode.getAttributes().getNamedItem("message").getNodeValue() : "N/A";
-                operationData.add(new String[]{methodName, inputMessage, outputMessage});
+                String inputMessage = (inputNode != null && inputNode.getAttributes().getNamedItem("message") != null) ? inputNode.getAttributes().getNamedItem("message").getNodeValue() : "N/A";
+                String outputMessage = (outputNode != null && outputNode.getAttributes().getNamedItem("message") != null) ? outputNode.getAttributes().getNamedItem("message").getNodeValue() : "N/A";
+                operationDataList.add(new OperationData(methodName, inputMessage, outputMessage));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return operationData;
+        return operationDataList;
     }
 
-    public String generateXmlFromXsd(File wsdlFile) {
+
+    public List<MessageData> extractMessages(File wsdlFile) {
+        List<MessageData> messageDataList = new ArrayList<>();
+        try {
+            Document doc = parseXml(wsdlFile);
+            NodeList messageNodes = evaluateXPath(doc, "//*[local-name()='message']");
+            for (int i = 0; i < messageNodes.getLength(); i++) {
+                Node message = messageNodes.item(i);
+                String messageName = message.getAttributes().getNamedItem("name").getNodeValue();
+                Node partNode = evaluateXPath(message, "*[local-name()='part']").item(0);
+                String elementName = (partNode != null && partNode.getAttributes().getNamedItem("element") != null) ? partNode.getAttributes().getNamedItem("element").getNodeValue() : "N/A";
+                String partName = (partNode != null && partNode.getAttributes().getNamedItem("name") != null) ? partNode.getAttributes().getNamedItem("name").getNodeValue() : "N/A";
+                messageDataList.add(new MessageData(messageName, elementName, partName));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return messageDataList;
+    }
+
+
+    public List<XsdData> generateXmlFromXsd(File wsdlFile) {
+        List<XsdData> xsdDataList = new ArrayList<>();
         try {
             Document doc = parseXml(wsdlFile);
             NodeList schemaNodes = evaluateXPath(doc, "//*[local-name()='schema']/*[local-name()='element']");
-            StringBuilder xmlBuilder = new StringBuilder();
-            xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
             for (int i = 0; i < schemaNodes.getLength(); i++) {
                 Node element = schemaNodes.item(i);
-                xmlBuilder.append(buildXmlFromElement(element, 0));
+                String elementName = element.getAttributes().getNamedItem("name").getNodeValue();
+                String xmlContent = buildXmlFromElement(element);
+                xsdDataList.add(new XsdData(elementName, xmlContent));
             }
-            System.out.println(xmlBuilder.toString());
-            return xmlBuilder.toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "<error>Could not generate XML from XSD</error>";
+        return xsdDataList;
     }
 
-    private String buildXmlFromElement(Node element, int depth) {
+    private String buildXmlFromElement(Node element) {
         StringBuilder xmlBuilder = new StringBuilder();
         String elementName = element.getAttributes().getNamedItem("name").getNodeValue();
-        xmlBuilder.append(indent(depth)).append("<").append(elementName).append(">");
+        xmlBuilder.append("<").append(elementName).append(">");
         NodeList children = evaluateXPathSafe(element, "*[local-name()='complexType']/*[local-name()='sequence']/*[local-name()='element']");
         if (children.getLength() > 0) {
-            xmlBuilder.append("\n");
             for (int i = 0; i < children.getLength(); i++) {
-                xmlBuilder.append(buildXmlFromElement(children.item(i), depth + 1));
+                xmlBuilder.append(buildXmlFromElement(children.item(i)));
             }
-            xmlBuilder.append(indent(depth));
         } else {
             xmlBuilder.append("...");
         }
-        xmlBuilder.append("</").append(elementName).append(">\n");
+        xmlBuilder.append("</").append(elementName).append(">");
         return xmlBuilder.toString();
     }
 
@@ -96,15 +146,76 @@ public class WsdlGenerate {
             return evaluateXPath(node, expression);
         } catch (Exception e) {
             return new NodeList() {
-                @Override 
-                public Node item(int index) { return null; }
-                @Override 
-                public int getLength() { return 0; }
+                @Override public Node item(int index) { return null; }
+                @Override public int getLength() { return 0; }
             };
         }
     }
 
-    private String indent(int depth) {
-        return "  ".repeat(Math.max(0, depth));
+    private String removeNamespace(String value) {
+        return value.contains(":") ? value.substring(value.indexOf(":") + 1) : value;
+    }
+
+
+    public static class OperationData {
+        private String methodName;
+        private String inputMessage;
+        private String outputMessage;
+
+        public OperationData(String methodName, String inputMessage, String outputMessage) {
+            this.methodName = methodName;
+            this.inputMessage = inputMessage;
+            this.outputMessage = outputMessage;
+        }
+
+        public String getMethodName() { return methodName; }
+        public String getInputMessage() { return inputMessage; }
+        public String getOutputMessage() { return outputMessage; }
+    }
+
+    public static class MessageData {
+        private String messageName;
+        private String elementName;
+        private String partName;
+
+        public MessageData(String messageName, String elementName, String partName) {
+            this.messageName = messageName;
+            this.elementName = elementName;
+            this.partName = partName;
+        }
+
+        public String getMessageName() { return messageName; }
+        public String getElementName() { return elementName; }
+        public String getPartName() { return partName; }
+    }
+
+    public static class XsdData {
+        private String elementName;
+        private String xmlContent;
+
+        public XsdData(String elementName, String xmlContent) {
+            this.elementName = elementName;
+            this.xmlContent = xmlContent;
+        }
+
+        public String getElementName() { return elementName; }
+        public String getXmlContent() { return xmlContent; }
+    }
+
+
+    public static class OperationWithXml {
+        private String methodName;
+        private String requestXml;
+        private String responseXml;
+
+        public OperationWithXml(String methodName, String requestXml, String responseXml) {
+            this.methodName = methodName;
+            this.requestXml = requestXml;
+            this.responseXml = responseXml;
+        }
+
+        public String getMethodName() { return methodName; }
+        public String getRequestXml() { return requestXml; }
+        public String getResponseXml() { return responseXml; }
     }
 }

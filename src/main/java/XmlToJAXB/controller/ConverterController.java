@@ -66,8 +66,7 @@ public class ConverterController {
             File outputFile = new File(outputDir, outputFileName);
 
             if (originalFileName.toLowerCase().endsWith(".wsdl")) {
-                wsdlGenerate.extractOperations(tempFile);
-                wsdlGenerate.generateXmlFromXsd(tempFile);
+                wsdlGenerate.convert(tempFile);
                 return null;
             }
     
