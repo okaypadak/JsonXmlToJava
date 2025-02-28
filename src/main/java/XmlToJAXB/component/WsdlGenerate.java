@@ -127,11 +127,21 @@ public class WsdlGenerate {
         String namespace = xsd.getNameSpace();
         String elementName = xsd.getElementName();
         String xmlContent = xsd.getXmlContent();
+        return generateSoapXml(elementName, xmlContent, namespace);
+    }
 
+    private String generateSoapXml(String elementName, String xmlContent, String namespace) {
+        String soapEnvelope = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"";
         if (namespace != null && !namespace.isEmpty()) {
-            return "<" + elementName + " xmlns=\"" + namespace + "\">" + xmlContent + "</" + elementName + ">";
+            soapEnvelope += " xmlns=\"" + namespace + "\"";
         }
-        return "<" + elementName + ">" + xmlContent + "</" + elementName + ">";
+        soapEnvelope += ">";
+
+        return soapEnvelope +
+                "<soapenv:Body>" +
+                "<" + elementName + ">" + xmlContent + "</" + elementName + ">" +
+                "</soapenv:Body>" +
+                "</soapenv:Envelope>";
     }
 
     private String buildXmlFromElement(Node element) {
