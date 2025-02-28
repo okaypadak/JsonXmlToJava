@@ -16,10 +16,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+
 @Component
 public class WsdlGenerate {
-
-
 
     public List<OperationWithXml> convert(File wsdlFile) {
 
@@ -35,23 +34,23 @@ public class WsdlGenerate {
             String responseXml = findXmlByMessage(outputMessage, messages, xsdData);
             operationXmlList.add(new OperationWithXml(operation.getMethodName(), requestXml, responseXml));
         }
+
         return operationXmlList;
     }
 
     private String findXmlByMessage(String messageName, List<MessageData> messages, List<XsdData> xsdData) {
         for (MessageData message : messages) {
-            if (message.getMessageName().contains(messageName)) {
+            if (message.getMessageName().equals(messageName)) {
                 for (XsdData xsd : xsdData) {
-                    String MessageName = removeNamespace(message.getElementName());
-                    if (xsd.getElementName().equals(MessageName)) {
-                        return xsd.getXmlContent();
+                    String inputMessage = removeNamespace(message.getElementName());
+                    if (xsd.getElementName().equals(inputMessage)) {
+                        return generateXmlWithNamespace(xsd);
                     }
                 }
             }
         }
         return "<error>XML not found</error>";
     }
-
 
     public List<OperationData> extractOperations(File wsdlFile) {
         List<OperationData> operationDataList = new ArrayList<>();
@@ -94,6 +93,7 @@ public class WsdlGenerate {
     }
 
 
+
     public List<XsdData> generateXmlFromXsd(File wsdlFile) {
         List<XsdData> xsdDataList = new ArrayList<>();
         try {
@@ -102,13 +102,36 @@ public class WsdlGenerate {
             for (int i = 0; i < schemaNodes.getLength(); i++) {
                 Node element = schemaNodes.item(i);
                 String elementName = element.getAttributes().getNamedItem("name").getNodeValue();
+                String namespace = getNamespaceFromParent(element);
                 String xmlContent = buildXmlFromElement(element);
-                xsdDataList.add(new XsdData(elementName, xmlContent));
+                xsdDataList.add(new XsdData(elementName, xmlContent, namespace));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return xsdDataList;
+    }
+
+    private String getNamespaceFromParent(Node element) {
+        Node parent = element.getParentNode();
+        if (parent != null && parent.getAttributes() != null) {
+            Node namespaceAttr = parent.getAttributes().getNamedItem("targetNamespace");
+            if (namespaceAttr != null) {
+                return namespaceAttr.getNodeValue();
+            }
+        }
+        return "";
+    }
+
+    private String generateXmlWithNamespace(XsdData xsd) {
+        String namespace = xsd.getNameSpace();
+        String elementName = xsd.getElementName();
+        String xmlContent = xsd.getXmlContent();
+
+        if (namespace != null && !namespace.isEmpty()) {
+            return "<" + elementName + " xmlns=\"" + namespace + "\">" + xmlContent + "</" + elementName + ">";
+        }
+        return "<" + elementName + ">" + xmlContent + "</" + elementName + ">";
     }
 
     private String buildXmlFromElement(Node element) {
@@ -129,7 +152,7 @@ public class WsdlGenerate {
 
     private Document parseXml(File file) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(false);
+        factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(file);
     }
@@ -192,14 +215,17 @@ public class WsdlGenerate {
     public static class XsdData {
         private String elementName;
         private String xmlContent;
+        private String nameSpace;
 
-        public XsdData(String elementName, String xmlContent) {
+        public XsdData(String elementName, String xmlContent, String nameSpace) {
             this.elementName = elementName;
             this.xmlContent = xmlContent;
+            this.nameSpace = nameSpace;
         }
 
         public String getElementName() { return elementName; }
         public String getXmlContent() { return xmlContent; }
+        public String getNameSpace() { return nameSpace; }
     }
 
 
